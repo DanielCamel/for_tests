@@ -74,7 +74,7 @@ class HashGenerator {
 }
 
 // Главный класс
-public class HashPatterns {
+public class HashGen_Class {
     public static void main(String[] args) {
         String data = "Хорошего дня!";
         System.out.println("\n" + "Исходный текст: " + data + "\n");
