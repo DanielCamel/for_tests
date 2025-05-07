@@ -38,51 +38,56 @@ public class TestContainers {
         LinkedList<Integer> linkedList = new LinkedList<>();
         Random random = new Random();
 
-        int[] sizes = new int[19]; // Массив размеров от 1000 до 10000 с шагом 500
-        for (int i = 0, size = 1000; size <= 10000; size += 500, i++) {
-            sizes[i] = size;
+        int start = 20000;
+        int end = 200000;
+        int step = 20000;
+        int size = (end - start) / step + 1;
+        
+        int[] sizes = new int[size];
+        for (int i = 0, sizeValue = start; sizeValue <= end; sizeValue += step, i++) {
+            sizes[i] = sizeValue;
         }
 
         int numberOfSearches = 100000;
 
         System.out.println("===== Добавление элементов =====");
-        for (int size : sizes) {
+        for (int sample : sizes) {
             hashSet.clear();
             linkedList.clear();
-            System.out.println("n = " + size);
+            System.out.println("n = " + sample);
 
             // Добавление в HashSet
             MyTimer timer1 = new MyTimer();
-            for (int i = 0; i < size; i++) {
+            for (int i = 0; i < sample; i++) {
                 hashSet.add(random.nextInt());
             }
             long addTimeHashSet = new Date().getTime() - timer1.d.getTime(); // Время добавления
             timer1.printTime("Добавление в HashSet");
-            hashSetAddSeries.add(size, addTimeHashSet);
+            hashSetAddSeries.add(sample, addTimeHashSet);
 
             // Добавление в LinkedList
             MyTimer timer2 = new MyTimer();
-            for (int i = 0; i < size; i++) {
+            for (int i = 0; i < sample; i++) {
                 linkedList.addFirst(random.nextInt());
             }
             long addTimeLinkedList = new Date().getTime() - timer2.d.getTime(); // Время добавления
             timer2.printTime("Добавление в LinkedList");
-            linkedListAddSeries.add(size, addTimeLinkedList);
+            linkedListAddSeries.add(sample, addTimeLinkedList);
         }
 
         System.out.println("\n===== Поиск элементов =====");
-        for (int size : sizes) {
+        for (int sample : sizes) {
             hashSet.clear();
             linkedList.clear();
 
             // Заполнение контейнеров
-            for (int i = 0; i < size; i++) {
+            for (int i = 0; i < sample; i++) {
                 int value = random.nextInt();
                 hashSet.add(value);
                 linkedList.addFirst(value);
             }
 
-            System.out.println("n = " + size);
+            System.out.println("n = " + sample);
 
             // Поиск в HashSet
             MyTimer timer3 = new MyTimer();
@@ -91,7 +96,7 @@ public class TestContainers {
             }
             long searchTimeHashSet = new Date().getTime() - timer3.d.getTime(); // Время поиска
             timer3.printTime("Поиск в HashSet");
-            hashSetSearchSeries.add(size, searchTimeHashSet);
+            hashSetSearchSeries.add(sample, searchTimeHashSet);
 
             // Поиск в LinkedList
             MyTimer timer4 = new MyTimer();
@@ -100,7 +105,7 @@ public class TestContainers {
             }
             long searchTimeLinkedList = new Date().getTime() - timer4.d.getTime(); // Время поиска
             timer4.printTime("Поиск в LinkedList");
-            linkedListSearchSeries.add(size, searchTimeLinkedList);
+            linkedListSearchSeries.add(sample, searchTimeLinkedList);
         }
 
         // Строим графики для добавления элементов
