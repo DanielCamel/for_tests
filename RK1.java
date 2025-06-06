@@ -1,5 +1,5 @@
 // РК1. Вариант №8. Создать класс «целое число».
-// Что-то поменял
+// Что-то поменял more
 import java.util.Locale;
 import java.util.Scanner; 
 
