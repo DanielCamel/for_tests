@@ -1,5 +1,5 @@
 // класс "Вещ. число"
-// XYZ!!!
+// XYZ!!!!
 class RealNumber {
     
     protected double value;
