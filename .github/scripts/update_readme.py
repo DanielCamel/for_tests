@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Обновляет README новыми коммитами (сверху - последние)
+Обновляет README.md, исключая собственные изменения
 """
 
 import os
@@ -14,20 +14,23 @@ from pathlib import Path
 # Настройки
 API_URL = "https://api.siliconflow.cn/v1/chat/completions"
 README_PATH = "README.md"
-MAX_DIFF_LENGTH = 2000  # Уменьшено для краткости
+MAX_DIFF_LENGTH = 2000
 IGNORE_FILES = [
     ".github/scripts/update_readme.py",
-    ".github/workflows/update_readme.yml"
+    ".github/workflows/update_readme.yml",
+    "README.md"  # Исключаем сам README.md
 ]
 
 class ReadmeUpdater:
     def __init__(self):
         self.repo = Repo('.')
         self.api_key = os.getenv('MY_DEEPSEEK_API')
+        if not self.api_key:
+            raise ValueError("API ключ не установлен")
         self.tz = timezone(timedelta(hours=3))
 
     def get_new_commits(self) -> List[Commit]:
-        """Возвращает новые коммиты, которых нет в README"""
+        """Получает новые коммиты, исключая служебные"""
         if not Path(README_PATH).exists():
             return list(self.repo.iter_commits('HEAD', max_count=10))
         
@@ -35,14 +38,16 @@ class ReadmeUpdater:
             content = f.read()
         
         last_hash_match = re.search(r'\d{2}:\d{2} \(([a-f0-9]{7})\)', content)
-        return list(self.repo.iter_commits(f'{last_hash_match.group(1)}..HEAD')) if last_hash_match else []
+        if last_hash_match:
+            return list(self.repo.iter_commits(f'{last_hash_match.group(1)}..HEAD'))
+        return []
 
     def format_time(self, timestamp: int) -> str:
         """Форматирует время в UTC+3"""
         return datetime.fromtimestamp(timestamp, self.tz).strftime('%H:%M')
 
     def get_changes(self, commit: Commit) -> List[Dict]:
-        """Возвращает изменения в коммите"""
+        """Возвращает изменения, исключая игнорируемые файлы"""
         if not commit.parents:
             return []
             
@@ -58,10 +63,11 @@ class ReadmeUpdater:
 
     def is_ignored(self, path: str) -> bool:
         """Проверяет, нужно ли игнорировать файл"""
-        return any(ignored in path.replace('\\', '/') for ignored in IGNORE_FILES)
+        path = path.replace('\\', '/')
+        return any(ignored in path for ignored in IGNORE_FILES)
 
     def generate_comment(self, diff: str) -> str:
-        """Генерирует краткий комментарий"""
+        """Генерирует краткое описание изменений"""
         try:
             response = requests.post(
                 API_URL,
@@ -69,7 +75,7 @@ class ReadmeUpdater:
                     "model": "Qwen/Qwen2.5-VL-72B-Instruct",
                     "messages": [{
                         "role": "user",
-                        "content": f"Кратко опиши изменения (2-3 пункта):\n{diff}"
+                        "content": f"Опиши изменения кратко (2-3 пункта):\n{diff}"
                     }],
                     "max_tokens": 150,
                     "temperature": 0.3
@@ -77,46 +83,38 @@ class ReadmeUpdater:
                 headers={"Authorization": f"Bearer {self.api_key}"},
                 timeout=5
             )
-            return '\n'.join(
-                f"- {line.strip()}" 
-                for line in response.json()['choices'][0]['message']['content'].split('\n') 
-                if line.strip() and not line.startswith(('```', 'Изменения'))
+            content = response.json()['choices'][0]['message']['content']
+            return '\n'.join(f"- {line.strip()}" for line in content.split('\n') if line.strip())
         except Exception:
             return "- Изменения"
 
-    def format_commit(self, commit: Commit) -> str:
-        """Форматирует коммит для README"""
-        changes = self.get_changes(commit)
-        if not changes:
-            return ""
-            
-        entry = [
-            f"{self.format_time(commit.committed_date)} ({commit.hexsha[:7]})",
-            f"Сообщение: {commit.message.split('[skip ci]')[0].strip()}"
-        ]
-        
-        for change in changes:
-            entry.append(f"++ {change['file']}")
-            entry.append(self.generate_comment(change['diff']))
-        
-        return '\n'.join(entry) + '\n\n'
-
     def update_readme(self):
-        """Обновляет README новыми коммитами"""
+        """Обновляет README, добавляя новые коммиты сверху"""
         new_commits = self.get_new_commits()
         if not new_commits:
             return
             
         current_date = datetime.now(self.tz).strftime('%d.%m.%Y')
-        new_content = f"## {current_date}\n\n"
-        new_content += ''.join(self.format_commit(c) for c in reversed(new_commits))
+        new_content = [f"## {current_date}\n"]
+        
+        for commit in reversed(new_commits):
+            changes = self.get_changes(commit)
+            if changes:
+                new_content.append(f"{self.format_time(commit.committed_date)} ({commit.hexsha[:7]})")
+                new_content.append(f"Сообщение: {commit.message.split('[skip ci]')[0].strip()}")
+                
+                for change in changes:
+                    new_content.append(f"++ {change['file']}")
+                    new_content.append(self.generate_comment(change['diff']))
+                
+                new_content.append("")
         
         if Path(README_PATH).exists():
             with open(README_PATH, 'r', encoding='utf-8') as f:
-                new_content += f.read()
+                new_content.append(f.read())
         
         with open(README_PATH, 'w', encoding='utf-8') as f:
-            f.write(new_content)
+            f.write('\n'.join(new_content))
 
 if __name__ == "__main__":
     try:
