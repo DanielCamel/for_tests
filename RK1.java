@@ -1,5 +1,5 @@
 // РК1. Вариант №8. Создать класс «целое число».
-// Что-то поменял more MORE TEST
+// Это java-программа для тестирования знаний ООП
 import java.util.Locale;
 import java.util.Scanner; 
 

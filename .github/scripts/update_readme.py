@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
-Automatically update README.md with commit changes using Qwen API
-Includes automatic git pull to sync changes
+Automatically update README.md with commit changes using AI API
 """
 
 import os
@@ -18,7 +17,10 @@ API_URL = "https://api.siliconflow.cn/v1/chat/completions"
 README_PATH = "README.md"
 MAX_DIFF_LENGTH = 4000
 COMMIT_SKIP_PATTERNS = ["skip ci", "auto-update", "update readme"]
-IGNORE_FILES = [README_PATH, ".github/workflows/update_readme.yml"]
+IGNORE_PATHS = [
+    ".github/scripts/update_readme.py",
+    ".github/workflows/update_readme.yml"
+]
 GIT_REMOTE = "origin"
 GIT_BRANCH = "main"
 
@@ -62,13 +64,17 @@ class ReadmeUpdater:
         commit_msg = commit.message.lower()
         return any(pattern in commit_msg for pattern in COMMIT_SKIP_PATTERNS)
 
+    def is_ignored_path(self, path: str) -> bool:
+        """Check if path should be ignored"""
+        return any(ignored in path for ignored in IGNORE_PATHS)
+
     def get_changes(self, commit) -> List[FileChange]:
         """Get list of changed files with diffs"""
         changes = []
         
         if not commit.parents:
             for item in commit.tree.traverse():
-                if item.type == 'blob' and item.path not in IGNORE_FILES:
+                if item.type == 'blob' and not self.is_ignored_path(item.path):
                     changes.append(FileChange(
                         filename=item.path,
                         change_type='added',
@@ -81,7 +87,7 @@ class ReadmeUpdater:
         
         for diff in diffs:
             filename = diff.b_path if diff.b_path else diff.a_path
-            if filename in IGNORE_FILES:
+            if self.is_ignored_path(filename):
                 continue
                 
             change_type = self._determine_change_type(diff)
@@ -96,7 +102,7 @@ class ReadmeUpdater:
         return changes
 
     def _determine_change_type(self, diff) -> str:
-        """Determine change type with emoji"""
+        """Determine change type"""
         if diff.new_file: return 'added'
         if diff.deleted_file: return 'deleted'
         if diff.renamed_file: return 'renamed'
@@ -136,19 +142,19 @@ class ReadmeUpdater:
 
     def _clean_ai_response(self, text: str) -> str:
         """Clean and format AI response"""
-        lines = [re.sub(r'^[\d\-•*]+\.?\s*', '- ', line.strip()) 
+        lines = [re.sub(r'^[\d\-•*]+\.?\s*', '', line.strip()) 
                 for line in text.split('\n') if line.strip()]
-        return '\n'.join(lines)
+        return '\n'.join(f"- {line}" for line in lines if line)
 
     def format_change_entry(self, change: FileChange) -> str:
         """Format file change entry for README"""
-        icons = {'added': '🆕', 'modified': '✏️', 'deleted': '🗑️', 'renamed': '🔀'}
-        entry = f"| {icons.get(change.change_type, '✏️')} `{change.filename}`\n"
+        symbols = {'added': '++', 'modified': '--', 'deleted': '--', 'renamed': '->'}
+        entry = f"----{symbols.get(change.change_type, '--')} {change.filename}\n"
         
         if change.description:
-            entry += "  |\n"
+            entry += "    |\n"
             for line in change.description.split('\n'):
-                entry += f"  | {line}\n"
+                entry += f"    {line}\n"
         
         return entry + "\n"
 
@@ -172,17 +178,28 @@ class ReadmeUpdater:
         
         # Build entry
         timestamp = datetime.now().strftime('%d.%m.%Y %H:%M')
-        new_entry = f"### {timestamp} ({len(changes)} changes)\n\n"
+        new_entry = f"### {timestamp} ({len(changes)} изменений)\n\n"
         new_entry += "".join(self.format_change_entry(c) for c in changes)
         
         # Update README
-        content = Path(README_PATH).read_text(encoding='utf-8') if Path(README_PATH).exists() else "# История изменений\n\n"
+        if Path(README_PATH).exists():
+            with open(README_PATH, 'r', encoding='utf-8') as f:
+                content = f.read()
+        else:
+            content = "## История изменений\n\n"
         
+        # Insert new entry after header
         header = "## История изменений"
-        updated_content = content.replace(f"{header}\n", f"{header}\n\n{new_entry}") if header in content \
-                        else f"{header}\n\n{new_entry}\n{content}"
+        if header in content:
+            updated_content = content.replace(
+                f"{header}\n", 
+                f"{header}\n\n{new_entry}"
+            )
+        else:
+            updated_content = f"{header}\n\n{new_entry}\n{content}"
         
-        Path(README_PATH).write_text(updated_content, encoding='utf-8')
+        with open(README_PATH, 'w', encoding='utf-8') as f:
+            f.write(updated_content)
         
         # Commit changes
         self.git.add(README_PATH)
