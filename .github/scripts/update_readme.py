@@ -49,7 +49,7 @@ class ReadmeUpdater:
         """Pull latest changes before making updates"""
         try:
             print("Syncing repository...")
-            self.repo.git.fetch(GIT_REMOTE)
+            self.repo.git.pull(GIT_REMOTE)
             self.repo.git.reset('--hard', f'{GIT_REMOTE}/{GIT_BRANCH}')
             print("Repository synced successfully")
         except GitCommandError as e:
