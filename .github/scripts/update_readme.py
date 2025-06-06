@@ -7,7 +7,7 @@ import os
 import re
 import requests
 from datetime import datetime, timezone, timedelta
-from git import Repo, GitCommandError
+from git import Repo
 from typing import List, Optional
 from dataclasses import dataclass
 from pathlib import Path
@@ -21,13 +21,11 @@ IGNORE_PATHS = [
     ".github/scripts/update_readme.py",
     ".github/workflows/update_readme.yml"
 ]
-GIT_REMOTE = "origin"
-GIT_BRANCH = "main"
 
 @dataclass
 class FileChange:
     filename: str
-    change_type: str
+    change_type: str  # 'added', 'modified', 'deleted', 'renamed'
     diff: str
     description: Optional[str] = None
 
@@ -37,24 +35,10 @@ class ReadmeUpdater:
         self.api_key = os.getenv('MY_DEEPSEEK_API')
         if not self.api_key:
             raise ValueError("MY_DEEPSEEK_API environment variable not set")
-        self._setup_git()
-        self._sync_repository()
-
-    def _setup_git(self):
-        """Configure git user for automated commits"""
+        
+        # Configure git user
         self.repo.git.config('--global', 'user.name', 'GitHub Actions')
         self.repo.git.config('--global', 'user.email', 'actions@github.com')
-
-    def _sync_repository(self):
-        """Pull latest changes before making updates"""
-        try:
-            print("Syncing repository...")
-            self.repo.git.pull(GIT_REMOTE)
-            self.repo.git.reset('--hard', f'{GIT_REMOTE}/{GIT_BRANCH}')
-            print("Repository synced successfully")
-        except GitCommandError as e:
-            print(f"Error syncing repository: {e}")
-            raise
 
     def _get_current_time(self):
         """Get current time in Moscow timezone (UTC+3)"""
@@ -74,7 +58,7 @@ class ReadmeUpdater:
         """Get list of changed files with diffs"""
         changes = []
         
-        if not commit.parents:
+        if not commit.parents:  # Initial commit
             for item in commit.tree.traverse():
                 if item.type == 'blob' and not self.is_ignored_path(item.path):
                     changes.append(FileChange(
@@ -116,12 +100,12 @@ class ReadmeUpdater:
     def generate_change_description(self, diff: str) -> str:
         """Get AI-generated description of changes"""
         prompt = f"""
-        Проанализируй изменения в коде и предоставь краткое описание на русском языке.
-        Формат ответа (только список, без вводных слов):
-        - Основное изменение 1
-        - Основное изменение 2
+        Analyze these code changes and provide a concise description in Russian.
+        Return only bullet points:
+        - Change 1
+        - Change 2
         
-        Изменения:
+        Changes:
         {diff}
         """
         
@@ -140,38 +124,33 @@ class ReadmeUpdater:
         try:
             response = requests.post(API_URL, json=payload, headers=headers, timeout=30)
             response.raise_for_status()
-            content = response.json()['choices'][0]['message']['content']
-            return self._clean_ai_response(content)
+            return self._clean_ai_response(response.json()['choices'][0]['message']['content'])
         except Exception as e:
             print(f"API Error: {e}")
             return "- Не удалось получить описание изменений"
 
     def _clean_ai_response(self, text: str) -> str:
         """Clean and format AI response"""
-        lines = []
-        for line in text.split('\n'):
-            line = re.sub(r'^[\d\-•*]+\.?\s*', '- ', line.strip())
-            if line and not line.startswith(('```', 'Изменения:', 'Анализ:')):
-                lines.append(line)
+        lines = [re.sub(r'^[\d\-•*]+\.?\s*', '- ', line.strip()) 
+                for line in text.split('\n') if line.strip()]
         return '\n'.join(lines)
 
     def format_change_entry(self, change: FileChange) -> str:
-        """Format file change entry for README with proper Markdown"""
+        """Format file change entry for README"""
         symbols = {'added': '++', 'modified': '~~', 'deleted': '--', 'renamed': '->'}
         entry = f"**{symbols.get(change.change_type, '~~')} {change.filename}**  \n"
         
         if change.description:
             entry += "```\n"
-            entry += change.description.replace('\n', '\n') + "\n"
+            entry += change.description + "\n"
             entry += "```\n"
         
-        return entry + "\n"
+        return entry
 
     def update_readme(self):
-        """Main function to update README with proper Markdown formatting"""
-        self._sync_repository()
-        
+        """Main function to update README"""
         commit = self.repo.head.commit
+        
         if self.should_skip_commit(commit):
             print("Skipping automated commit")
             return
@@ -185,13 +164,13 @@ class ReadmeUpdater:
         for change in changes:
             change.description = self.generate_change_description(change.diff)
         
-        # Build entry with proper Markdown and Moscow time
+        # Build entry
         timestamp = self._get_current_time()
         new_entry = f"## Изменения от {timestamp} ({len(changes)} файлов)\n\n"
         new_entry += "".join(self.format_change_entry(c) for c in changes)
         new_entry += "---\n\n"
         
-        # Update README with proper line breaks
+        # Update README
         if Path(README_PATH).exists():
             with open(README_PATH, 'r', encoding='utf-8') as f:
                 content = f.read()
@@ -212,15 +191,7 @@ class ReadmeUpdater:
         with open(README_PATH, 'w', encoding='utf-8', newline='\n') as f:
             f.write(updated_content)
         
-        # Commit and push changes
-        self.repo.git.add(README_PATH)
-        if not self.repo.index.diff('HEAD'):
-            print("No changes to commit")
-            return
-            
-        self.repo.git.commit('-m', 'Auto-update README with changes [skip ci]')
-        self.repo.git.push(GIT_REMOTE, GIT_BRANCH)
-        print(f"Updated README with {len(changes)} changes and pushed")
+        print(f"README updated with {len(changes)} changes")
 
 if __name__ == "__main__":
     try:
