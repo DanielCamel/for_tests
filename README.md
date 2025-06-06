@@ -1,5 +1,26 @@
 ## 07.06.2025
 
+00:23 (e4be2b9)
+Сообщение: new
+++ .github/scripts/readme_for_month.py
+- Изменения
+++ .github/scripts/update_readme copy.py
+- Изменения
+++ .gitignore
+- Изменения
+
+00:26 (49dd6f7)
+Сообщение: test new
+++ RK2.java
+- Изменения
+
+00:43 (77d5295)
+Сообщение: Обновлнеие
+++ RK2.java
+- Изменения
+
+## 07.06.2025
+
 23:53 (3c04f91)
 Сообщение: Auto-update README with changes [skip ci]
 
