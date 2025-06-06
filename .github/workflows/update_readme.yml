@@ -28,7 +28,7 @@ jobs:
         
     - name: Update README
       env:
-        DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        MY_DEEPSEEK_API: ${{ secrets.MY_DEEPSEEK_API }}
       run: python .github/scripts/update_readme.py
       
     - name: Commit and push changes

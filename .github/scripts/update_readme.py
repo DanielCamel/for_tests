@@ -28,7 +28,7 @@ class FileChange:
 class ReadmeUpdater:
     def __init__(self):
         self.repo = Repo('.')
-        self.api_key = os.getenv('DEEPSEEK_API_KEY')
+        self.api_key = os.getenv('MY_DEEPSEEK_API')
         if not self.api_key:
             raise ValueError("DEEPSEEK_API_KEY environment variable not set")
 
