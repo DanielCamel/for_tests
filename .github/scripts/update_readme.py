@@ -20,6 +20,7 @@ IGNORE_PATHS = [
     ".github/scripts/update_readme.py",
     ".github/workflows/update_readme.yml"
 ]
+SKIP_PATTERNS = ["skip ci", "auto-update", "update readme"]  # Добавлено определение
 
 class CommitHistory:
     def __init__(self):
@@ -137,8 +138,11 @@ class CommitHistory:
         
         return '\n'.join(f"Изменение {i+1}: {line}" for i, line in enumerate(lines[:2]))
 
-    def format_commit(self, commit: Commit) -> Dict:
+    def format_commit(self, commit: Commit) -> Optional[Dict]:
         """Форматирует коммит для вывода"""
+        if any(p in commit.message.lower() for p in SKIP_PATTERNS):  # Исправлено на SKIP_PATTERNS
+            return None
+            
         changes = self.get_changes(commit)
         if not changes:
             return None
@@ -167,9 +171,6 @@ class CommitHistory:
         # Группируем коммиты по датам
         commits_by_date = {}
         for commit in new_commits:
-            if any(p in commit.message.lower() for p in COMMIT_SKIP_PATTERNS):
-                continue
-                
             date_str = datetime.fromtimestamp(commit.committed_date, self.tz).strftime('%d.%m.%Y')
             formatted = self.format_commit(commit)
             if formatted:
