@@ -166,7 +166,7 @@ class ReadmeUpdater:
         
         # Build entry
         timestamp = self._get_current_time()
-        new_entry = f"## Изменения от {timestamp} ({len(changes)} файлов)\n\n"
+        new_entry = f"## {timestamp} ({len(changes)} файлов)\n\n"
         new_entry += "".join(self.format_change_entry(c) for c in changes)
         new_entry += "---\n\n"
         

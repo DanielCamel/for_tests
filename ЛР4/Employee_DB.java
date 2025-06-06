@@ -1,5 +1,5 @@
 package ЛР4;
-
+// Сложнааааа
 import java.io.*;
 import java.util.*;
 import java.util.Locale;

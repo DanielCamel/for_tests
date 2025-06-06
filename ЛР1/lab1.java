@@ -1,5 +1,5 @@
 package ЛР1;
-
+// Добавил какой-то комментарий в ЛР1
 class lab1 {
     public static void main(String[] args) {
         // Начинаем с самой внутренней части
