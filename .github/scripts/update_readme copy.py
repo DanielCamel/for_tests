@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-Generate full change history for the last month in README.md
+Automatically update README.md with commit changes using AI API
 """
 
 import os
 import re
 import requests
 from datetime import datetime, timezone, timedelta
-from git import Repo, Commit
+from git import Repo
 from typing import List, Optional
 from dataclasses import dataclass
 from pathlib import Path
@@ -21,38 +21,41 @@ IGNORE_PATHS = [
     ".github/scripts/update_readme.py",
     ".github/workflows/update_readme.yml"
 ]
-HISTORY_MONTHS = 1  # How many months of history to include
 
 @dataclass
 class FileChange:
     filename: str
-    change_type: str
+    change_type: str  # 'added', 'modified', 'deleted', 'renamed'
     diff: str
     description: Optional[str] = None
 
-class HistoryGenerator:
+class ReadmeUpdater:
     def __init__(self):
         self.repo = Repo('.')
         self.api_key = os.getenv('MY_DEEPSEEK_API')
         if not self.api_key:
             raise ValueError("MY_DEEPSEEK_API environment variable not set")
+        
+        # Configure git user
+        self.repo.git.config('--global', 'user.name', 'GitHub Actions')
+        self.repo.git.config('--global', 'user.email', 'actions@github.com')
 
     def _get_current_time(self):
         """Get current time in Moscow timezone (UTC+3)"""
         tz = timezone(timedelta(hours=3))
         return datetime.now(tz).strftime('%d.%m.%Y %H:%M')
 
-    def _get_commits_since(self, months: int) -> List[Commit]:
-        """Get all commits for the specified number of months"""
-        since_date = datetime.now() - timedelta(days=30*months)
-        return list(self.repo.iter_commits(since=since_date.isoformat()))
+    def should_skip_commit(self, commit) -> bool:
+        """Check if commit should be skipped"""
+        commit_msg = commit.message.lower()
+        return any(pattern in commit_msg for pattern in COMMIT_SKIP_PATTERNS)
 
     def is_ignored_path(self, path: str) -> bool:
         """Check if path should be ignored"""
         return any(ignored in path.replace('\\', '/') for ignored in IGNORE_PATHS)
 
-    def get_changes(self, commit: Commit) -> List[FileChange]:
-        """Get list of changed files with diffs for a commit"""
+    def get_changes(self, commit) -> List[FileChange]:
+        """Get list of changed files with diffs"""
         changes = []
         
         if not commit.parents:  # Initial commit
@@ -132,59 +135,68 @@ class HistoryGenerator:
                 for line in text.split('\n') if line.strip()]
         return '\n'.join(lines)
 
-    def format_change_entry(self, commit: Commit, changes: List[FileChange]) -> str:
-        """Format commit entry for README"""
-        commit_time = datetime.fromtimestamp(commit.committed_date).strftime('%d.%m.%Y %H:%M')
-        entry = f"## {commit_time} ({commit.hexsha[:7]})\n\n"
-        entry += f"**Message:** {commit.message.strip()}\n\n"
+    def format_change_entry(self, change: FileChange) -> str:
+        """Format file change entry for README"""
+        symbols = {'added': '++', 'modified': '~~', 'deleted': '--', 'renamed': '->'}
+        entry = f"**{symbols.get(change.change_type, '~~')} {change.filename}**  \n"
         
-        for change in changes:
-            if not change.description:
-                change.description = self.generate_change_description(change.diff)
-            
-            symbols = {'added': '++', 'modified': '~~', 'deleted': '--', 'renamed': '->'}
-            entry += f"**{symbols.get(change.change_type, '~~')} {change.filename}**  \n"
+        if change.description:
             entry += "```\n"
             entry += change.description + "\n"
-            entry += "```\n\n"
+            entry += "```\n"
         
-        return entry + "---\n\n"
+        return entry
 
-    def generate_history(self):
-        """Generate full change history for the specified period"""
-        commits = self._get_commits_since(HISTORY_MONTHS)
-        if not commits:
-            print("No commits found for the specified period")
+    def update_readme(self):
+        """Main function to update README"""
+        commit = self.repo.head.commit
+        
+        if self.should_skip_commit(commit):
+            print("Skipping automated commit")
             return
         
-        full_history = "# Полная история изменений\n\n"
-        full_history += f"Сгенерировано: {self._get_current_time()}\n\n"
+        changes = [c for c in self.get_changes(commit) if c.change_type != 'deleted']
+        if not changes:
+            print("No relevant changes detected")
+            return
         
-        for commit in reversed(commits):  # Process from oldest to newest
-            if self.should_skip_commit(commit):
-                continue
-                
-            changes = self.get_changes(commit)
-            if not changes:
-                continue
-                
-            full_history += self.format_change_entry(commit, changes)
+        # Generate descriptions
+        for change in changes:
+            change.description = self.generate_change_description(change.diff)
         
-        # Write to README
+        # Build entry
+        timestamp = self._get_current_time()
+        new_entry = f"## {timestamp} ({len(changes)} файлов)\n\n"
+        new_entry += "".join(self.format_change_entry(c) for c in changes)
+        new_entry += "---\n\n"
+        
+        # Update README
+        if Path(README_PATH).exists():
+            with open(README_PATH, 'r', encoding='utf-8') as f:
+                content = f.read()
+        else:
+            content = "# История изменений\n\n"
+        
+        # Insert new entry after header
+        header = "# История изменений"
+        if header in content:
+            updated_content = content.replace(
+                f"{header}\n", 
+                f"{header}\n\n{new_entry}"
+            )
+        else:
+            updated_content = f"{header}\n\n{new_entry}{content}"
+        
+        # Write with explicit newlines
         with open(README_PATH, 'w', encoding='utf-8', newline='\n') as f:
-            f.write(full_history)
+            f.write(updated_content)
         
-        print(f"Generated history for {len(commits)} commits")
-
-    def should_skip_commit(self, commit: Commit) -> bool:
-        """Check if commit should be skipped"""
-        commit_msg = commit.message.lower()
-        return any(pattern in commit_msg for pattern in COMMIT_SKIP_PATTERNS)
+        print(f"README updated with {len(changes)} changes")
 
 if __name__ == "__main__":
     try:
-        generator = HistoryGenerator()
-        generator.generate_history()
+        updater = ReadmeUpdater()
+        updater.update_readme()
     except Exception as e:
         print(f"Error: {e}")
         exit(1)
