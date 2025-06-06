@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generate change history for the last month in README.md
+Generate change history in specified format
 """
 
 import os
@@ -8,7 +8,7 @@ import re
 import requests
 from datetime import datetime, timezone, timedelta
 from git import Repo, Commit
-from typing import List
+from typing import List, Dict
 from pathlib import Path
 
 # Configuration
@@ -20,7 +20,7 @@ IGNORE_PATHS = [
     ".github/scripts/update_readme.py",
     ".github/workflows/update_readme.yml"
 ]
-HISTORY_MONTHS = 1  # Количество месяцев истории
+HISTORY_DAYS = 30  # Number of days to look back
 
 class ChangeHistoryGenerator:
     def __init__(self):
@@ -30,23 +30,26 @@ class ChangeHistoryGenerator:
             raise ValueError("MY_DEEPSEEK_API environment variable not set")
         self.tz = timezone(timedelta(hours=3))  # UTC+3
 
-    def _get_commits_since(self, months: int) -> List[Commit]:
-        """Get all commits for the specified number of months"""
-        since_date = datetime.now() - timedelta(days=30*months)
+    def _get_commits_since(self, days: int) -> List[Commit]:
+        """Get all commits for the specified number of days"""
+        since_date = datetime.now() - timedelta(days=days)
         return list(self.repo.iter_commits(since=since_date.isoformat()))
 
-    def _format_datetime(self, timestamp: int) -> str:
-        """Format timestamp to string in UTC+3"""
+    def _format_datetime(self, timestamp: int) -> Dict[str, str]:
+        """Format timestamp to date and time components in UTC+3"""
         dt = datetime.fromtimestamp(timestamp, self.tz)
-        return dt.strftime('%d.%m.%Y %H:%M')
+        return {
+            'date': dt.strftime('%d.%m.%Y'),
+            'time': dt.strftime('%H:%M')
+        }
 
     def _is_ignored_path(self, path: str) -> bool:
         """Check if path should be ignored"""
         path = path.replace('\\', '/')
         return any(ignored in path for ignored in IGNORE_PATHS)
 
-    def _get_changes(self, commit: Commit) -> List[dict]:
-        """Get list of changed files with diffs for a commit"""
+    def _get_changes(self, commit: Commit) -> List[Dict]:
+        """Get list of changed files for a commit"""
         changes = []
         
         if not commit.parents:  # Initial commit
@@ -132,42 +135,56 @@ class ChangeHistoryGenerator:
         return any(pattern in commit_msg for pattern in COMMIT_SKIP_PATTERNS)
 
     def generate_readme(self):
-        """Generate README with change history"""
-        commits = self._get_commits_since(HISTORY_MONTHS)
+        """Generate README with change history in requested format"""
+        commits = self._get_commits_since(HISTORY_DAYS)
         if not commits:
             print("No commits found for the specified period")
             return
         
-        # Начинаем с заголовка
-        content = "# Изменения\n\n"
-        content += f"Последнее обновление: {self._format_datetime(datetime.now().timestamp())}\n\n"
-        
-        # Добавляем коммиты в обратном порядке (новые сверху)
+        # Group commits by date
+        commits_by_date = {}
         for commit in commits:
             if self._should_skip_commit(commit):
                 continue
                 
-            changes = self._get_changes(commit)
-            if not changes:
-                continue
+            dt = self._format_datetime(commit.committed_date)
+            date_str = dt['date']
+            
+            if date_str not in commits_by_date:
+                commits_by_date[date_str] = []
                 
-            # Форматируем запись коммита
-            commit_time = self._format_datetime(commit.committed_date)
-            content += f"## {commit_time} ({commit.hexsha[:7]})\n\n"
-            content += f"**Сообщение:** {commit.message.strip()}\n\n"
-            
-            # Добавляем изменения
-            for change in changes:
-                description = self._generate_change_description(change['diff'])
-                symbol = {'added': '++', 'modified': '~~', 'deleted': '--', 'renamed': '->'}.get(change['type'], '~~')
-                content += f"**{symbol} {change['filename']}**  \n"
-                content += "```\n"
-                content += description + "\n"
-                content += "```\n\n"
-            
-            content += "---\n\n"
+            changes = self._get_changes(commit)
+            if changes:
+                commits_by_date[date_str].append({
+                    'time': dt['time'],
+                    'hash': commit.hexsha[:7],
+                    'message': commit.message.strip(),
+                    'changes': changes
+                })
         
-        # Записываем в файл
+        # Generate README content
+        content = "# Изменения\n\n"
+        content += f"*Последнее обновление: {self._format_datetime(datetime.now().timestamp())['date']} {self._format_datetime(datetime.now().timestamp())['time']}*\n\n"
+        
+        # Process dates in reverse order (newest first)
+        for date_str in sorted(commits_by_date.keys(), reverse=True):
+            content += f"## {date_str}\n\n"
+            
+            # Process commits for this date
+            for commit in commits_by_date[date_str]:
+                content += f"{commit['time']} ({commit['hash']})\n"
+                content += f"Сообщение: {commit['message']}\n\n"
+                
+                # Process changes
+                for change in commit['changes']:
+                    description = self._generate_change_description(change['diff'])
+                    symbol = {'added': '++', 'modified': '~~', 'deleted': '--', 'renamed': '->'}.get(change['type'], '~~')
+                    content += f"{symbol} {change['filename']}\n\n"
+                    content += f"{description}\n\n"
+                
+                content += "\n"
+        
+        # Write to file
         with open(README_PATH, 'w', encoding='utf-8', newline='\n') as f:
             f.write(content)
         
