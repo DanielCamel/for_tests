@@ -8,7 +8,7 @@ import re
 import requests
 from datetime import datetime, timezone, timedelta
 from git import Repo, Commit, Diff
-from typing import List
+from typing import List, Dict
 from pathlib import Path
 
 # Конфигурация
@@ -109,16 +109,19 @@ class SimpleReadmeUpdater:
             return self._clean_description(content)
         except Exception as e:
             print(f"API Error: {e}")
-            return "Описание изменений недоступно"
+            return "- Описание изменений недоступно"
 
     def _clean_description(self, text: str) -> str:
         """Очищает описание от лишнего"""
         lines = [line.strip() for line in text.split('\n') if line.strip()]
-        return '\n'.join(
-            f"- {re.sub(r'^[-\*•]\s*', '', line)}" 
-            for line in lines 
-            if not line.startswith(('```', 'Изменения:'))
-        )
+        cleaned_lines = []
+        for line in lines:
+            # Убираем начальные маркеры списка
+            clean_line = re.sub(r'^[-\*•]\s*', '', line)
+            # Пропускаем технические строки
+            if not clean_line.startswith(('```', 'Изменения:', 'Анализ:')):
+                cleaned_lines.append(f"- {clean_line}")
+        return '\n'.join(cleaned_lines)
 
     def _format_commit(self, commit: Commit) -> str:
         """Форматирует коммит для README"""
