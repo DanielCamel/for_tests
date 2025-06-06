@@ -7,7 +7,7 @@ import os
 import re
 import requests
 from datetime import datetime, timezone, timedelta
-from git import Repo, Commit
+from git import Repo, Commit, Diff
 from typing import List
 from pathlib import Path
 
@@ -36,7 +36,6 @@ class SimpleReadmeUpdater:
         with open(README_PATH, 'r', encoding='utf-8') as f:
             content = f.read()
         
-        # Ищем последний обработанный коммит
         last_commit_match = re.search(r'\d{2}:\d{2} \(([a-f0-9]{7})\)', content)
         if last_commit_match:
             last_hash = last_commit_match.group(1)
@@ -48,21 +47,36 @@ class SimpleReadmeUpdater:
         """Форматирует время в UTC+3"""
         return datetime.fromtimestamp(timestamp, self.tz).strftime('%H:%M')
 
-    def _get_changes(self, commit: Commit) -> List[str]:
-        """Возвращает список изменённых файлов"""
+    def _get_file_diff(self, diff: Diff) -> str:
+        """Получает diff для одного файла"""
+        try:
+            if hasattr(diff, 'diff'):
+                return diff.diff.decode('utf-8', errors='replace')[:MAX_DIFF_LENGTH]
+            return ""
+        except AttributeError:
+            return str(diff)[:MAX_DIFF_LENGTH]
+
+    def _get_changes(self, commit: Commit) -> List[Dict]:
+        """Возвращает список изменений с диффами"""
         changes = []
         
-        if not commit.parents:  # Первый коммит
-            return [item.path for item in commit.tree.traverse() 
-                   if item.type == 'blob' and not self._is_ignored(item.path)]
+        if not commit.parents:
+            return [{
+                'filename': item.path,
+                'diff': f"Initial commit: {item.path}"
+            } for item in commit.tree.traverse() 
+               if item.type == 'blob' and not self._is_ignored(item.path)]
 
         parent = commit.parents[0]
-        diffs = parent.diff(commit)
+        diffs = parent.diff(commit, create_patch=True)
         
         for diff in diffs:
             filename = diff.b_path if diff.b_path else diff.a_path
             if filename and not self._is_ignored(filename):
-                changes.append(filename)
+                changes.append({
+                    'filename': filename,
+                    'diff': self._get_file_diff(diff)
+                })
         
         return changes
 
@@ -73,7 +87,7 @@ class SimpleReadmeUpdater:
 
     def _generate_description(self, diff: str) -> str:
         """Генерирует описание изменений через API"""
-        prompt = f"Опиши эти изменения кратко на русском:\n{diff}"
+        prompt = f"Опиши эти изменения кратко на русском (3-5 пунктов):\n{diff}"
         
         try:
             response = requests.post(
@@ -91,9 +105,20 @@ class SimpleReadmeUpdater:
                 timeout=10
             )
             response.raise_for_status()
-            return response.json()['choices'][0]['message']['content'].strip()
-        except Exception:
+            content = response.json()['choices'][0]['message']['content']
+            return self._clean_description(content)
+        except Exception as e:
+            print(f"API Error: {e}")
             return "Описание изменений недоступно"
+
+    def _clean_description(self, text: str) -> str:
+        """Очищает описание от лишнего"""
+        lines = [line.strip() for line in text.split('\n') if line.strip()]
+        return '\n'.join(
+            f"- {re.sub(r'^[-\*•]\s*', '', line)}" 
+            for line in lines 
+            if not line.startswith(('```', 'Изменения:'))
+        )
 
     def _format_commit(self, commit: Commit) -> str:
         """Форматирует коммит для README"""
@@ -103,21 +128,16 @@ class SimpleReadmeUpdater:
         if not changes:
             return ""
         
-        # Получаем diff для описания
-        diff = ""
-        if commit.parents:
-            diff = commit.parents[0].diff(commit, create_patch=True).decode(errors='replace')[:MAX_DIFF_LENGTH]
-        
-        description = self._generate_description(diff)
-        
         # Формируем запись
         entry = f"{time_str} ({commit.hexsha[:7]})\n"
         entry += f"Сообщение: {commit.message.strip()}\n\n"
         
-        for file in changes:
-            entry += f"++ {file}\n\n"
+        for change in changes:
+            entry += f"++ {change['filename']}\n\n"
+            if change['diff']:
+                description = self._generate_description(change['diff'])
+                entry += f"{description}\n\n"
         
-        entry += f"{description}\n\n"
         return entry
 
     def update_readme(self):
@@ -144,22 +164,18 @@ class SimpleReadmeUpdater:
                 new_entries += formatted
         
         # Объединяем с существующим содержимым
-        if old_content.startswith("## "):
-            # Вставляем перед первой датой
-            parts = old_content.split("\n", 2)
-            updated_content = parts[0] + "\n\n" + new_entries + parts[2] if len(parts) > 2 else new_entries + old_content
-        else:
-            updated_content = new_entries + old_content
+        updated_content = new_entries + old_content
         
         # Записываем обратно
         with open(README_PATH, 'w', encoding='utf-8') as f:
             f.write(updated_content)
         
+        print(f"Добавлено {len(new_commits)} новых коммитов")
 
 if __name__ == "__main__":
     try:
         updater = SimpleReadmeUpdater()
         updater.update_readme()
     except Exception as e:
-        print(f"Ошибка: {e}")
+        print(f"Ошибка: {str(e)}")
         exit(1)
