@@ -20,9 +20,9 @@ IGNORE_PATHS = [
     ".github/scripts/update_readme.py",
     ".github/workflows/update_readme.yml"
 ]
-SKIP_PATTERNS = ["skip ci", "auto-update", "update readme"]  # Добавлено определение
+SKIP_PATTERNS = ["skip ci", "auto-update", "update readme"]
 
-class CommitHistory:
+class CommitLogger:
     def __init__(self):
         self.repo = Repo('.')
         self.api_key = os.getenv('MY_DEEPSEEK_API')
@@ -98,8 +98,8 @@ class CommitHistory:
         prompt = f"""
         Детально проанализируй эти изменения кода и сгенерируй развернутое описание на русском языке.
         Формат строго следующий:
-        Изменение 1: [детальное описание первого изменения]
-        Изменение 2: [детальное описание второго изменения]
+        - [описание изменения]
+        - ...
         
         Изменения:
         {diff}
@@ -124,7 +124,7 @@ class CommitHistory:
             return self.clean_response(response.json()['choices'][0]['message']['content'])
         except Exception as e:
             print(f"API Error: {e}")
-            return "Не удалось получить описание изменений"
+            return "- Не удалось получить описание изменений"
 
     def clean_response(self, text: str) -> str:
         """Очищает ответ API до нужного формата"""
@@ -136,11 +136,11 @@ class CommitHistory:
             elif line and not lines:
                 lines.append(line)
         
-        return '\n'.join(f"Изменение {i+1}: {line}" for i, line in enumerate(lines[:2]))
+        return '\n'.join(f"- Изменение {i+1}: {line}" for i, line in enumerate(lines[:2]))
 
     def format_commit(self, commit: Commit) -> Optional[Dict]:
         """Форматирует коммит для вывода"""
-        if any(p in commit.message.lower() for p in SKIP_PATTERNS):  # Исправлено на SKIP_PATTERNS
+        if any(p in commit.message.lower() for p in SKIP_PATTERNS):
             return None
             
         changes = self.get_changes(commit)
@@ -148,6 +148,7 @@ class CommitHistory:
             return None
             
         return {
+            'date': datetime.fromtimestamp(commit.committed_date, self.tz).strftime('%d.%m.%Y'),
             'time': self.format_time(commit.committed_date),
             'hash': commit.hexsha[:7],
             'message': commit.message.strip(),
@@ -171,12 +172,11 @@ class CommitHistory:
         # Группируем коммиты по датам
         commits_by_date = {}
         for commit in new_commits:
-            date_str = datetime.fromtimestamp(commit.committed_date, self.tz).strftime('%d.%m.%Y')
             formatted = self.format_commit(commit)
             if formatted:
-                if date_str not in commits_by_date:
-                    commits_by_date[date_str] = []
-                commits_by_date[date_str].append(formatted)
+                if formatted['date'] not in commits_by_date:
+                    commits_by_date[formatted['date']] = []
+                commits_by_date[formatted['date']].append(formatted)
         
         if not commits_by_date:
             return
@@ -184,9 +184,11 @@ class CommitHistory:
         # Формируем новые записи
         new_content = ""
         for date in sorted(commits_by_date.keys(), reverse=True):
-            new_content += f"{date}\n\n"
+            new_content += f"## {date}\n\n"
             for commit in commits_by_date[date]:
-                new_content += f"{commit['time']} ({commit['hash']}) Сообщение: {commit['message']}\n\n"
+                new_content += f"{commit['time']} ({commit['hash']})\n"
+                new_content += f"Сообщение: {commit['message']}\n\n"
+                
                 for change in commit['changes']:
                     new_content += f"{change['symbol']} {change['filename']}\n\n"
                     new_content += f"{change['description']}\n\n"
@@ -211,7 +213,7 @@ class CommitHistory:
 
 if __name__ == "__main__":
     try:
-        logger = CommitHistory()
+        logger = CommitLogger()
         logger.update_readme()
     except Exception as e:
         print(f"Ошибка: {e}")
