@@ -2,26 +2,27 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
+  repository_dispatch:
+    types: [build_stopped]
 
 jobs:
   build:
+    name: ⚙️ Main Build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      
-      - name: Build
+      - name: Simulate work
         run: |
-          echo "🚀 Начало сборки..."
-          echo "Коммит: ${{ github.sha }}"
-          echo "Ветка: ${{ github.ref }}"
-          
-          # Обычные команды сборки
-          echo "📦 Установка зависимостей..."
-          # ваши команды...
-          
-          echo "⚡ Сборка проекта..."
-          # ваши команды...
-          
-          echo "✅ Сборка завершена"
+          echo "🏗️ Сборка запущена..."
+          sleep 60
+          echo "✅ Завершено."
+
+  on-stop:
+    name: 🛑 Build stopped
+    runs-on: ubuntu-latest
+    if: github.event.action == 'build_stopped'
+    steps:
+      - name: Write stop reason
+        run: |
+          echo "🚫 Build was stopped by local script due to BUILD_STOP_VALUE=true" >> $GITHUB_STEP_SUMMARY
