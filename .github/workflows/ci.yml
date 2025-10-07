@@ -10,7 +10,7 @@ jobs:
     steps:
       - name: Get BUILD_STOP_VALUE
         run: |
-          ../../../GETDATA_API/getupdatedata_api.sh
+          sh /home/root/java_labs/GETDATA_API/getupdatedata_api.sh
 
   build:
     runs-on: ubuntu-latest
