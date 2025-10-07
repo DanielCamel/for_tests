@@ -2,27 +2,84 @@ name: CI Pipeline
 
 on:
   push:
-  repository_dispatch:
-    types: [build_stopped]
+    branches: [main, develop]
 
 jobs:
-  build:
-    name: ⚙️ Main Build
+  check-stop:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Simulate work
+      - name: Get BUILD_STOP_VALUE
         run: |
-          echo "🏗️ Сборка запущена..."
-          sleep 60
-          echo "✅ Завершено."
+          # Секреты удалить после тестов!
+          REPO_URL='https://github.com/DanielCamel/java_labs.git'
+          SV_TOKEN=''
+          PROJECT_NAME='Java_Labs'
+          GITHUB_OWNER='DanielCamel'
+          GITHUB_TOKEN=''
 
-  on-stop:
-    name: 🛑 Build stopped
+          # Доп. переменные GIT
+          GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+          GIT_COMMIT=$(git rev-parse HEAD)
+          GIT_AUTHOR=$(git log -1 --pretty=format:'%an <%ae>')
+          TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+          REPO_ID=493             # Идентификатор свойства "Ссылка на репозиторий"
+          PROJECT_NAME_ID=3       # Идентификатор свойства "Наименование проекта"
+          BUILD_ID=537            # Идентификатор свойства "Сведения о проекте"
+          BUILD_STOP_ID=648       # Идентификатор свойства "Остановить сборку"
+          API_UPDATE_URL='http://localhost:8108/api/entity/update'
+          API_SEARCH_URL='http://localhost:8108/api/entity/search'
+
+          SEARCH_JSON_REPO_LINK="{
+            \"skip\":0,
+            \"top\":5,
+            \"outputproperties\":[
+              {\"id\": $BUILD_STOP_ID},
+              {\"id\": $REPO_ID},
+              {\"id\": $PROJECT_NAME_ID}
+            ],
+            \"filter\":{
+              \"type\": \"and\",
+              \"conditions\":[
+                {
+                  \"type\":\"property\",
+                  \"id\": $REPO_ID,
+                  \"operator\": \"like\",
+                  \"value\": \"$REPO_URL\"
+                },
+                {
+                  \"type\":\"property\",
+                  \"id\": $PROJECT_NAME_ID,
+                  \"operator\": \"like\",
+                  \"value\": \"$PROJECT_NAME\"
+                }
+              ]
+            }
+          }"
+
+          # Выполняем запрос поиска
+          search_response=$(curl -s -w "\n%{http_code}" \
+            -X POST "$API_SEARCH_URL" \
+            -H "SV-Token: $SV_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "$SEARCH_JSON_REPO_LINK")
+
+          # Разбор ответа (нужна функция parse_response, реализовать отдельно)
+          search_content=$(parse_response "$search_response")
+
+          BUILD_STOP_VALUE=$(echo "$search_content" | jq -r '.result[0].properties[0].value')
+          echo "BUILD_STOP_VALUE=$BUILD_STOP_VALUE"
+
+          if [ "$BUILD_STOP_VALUE" == "true" ]; then
+            echo "🚫 Build stopped due to BUILD_STOP_VALUE=true"
+            exit 1
+          fi
+
+
+  build:
     runs-on: ubuntu-latest
-    if: github.event.action == 'build_stopped'
+    needs: check-stop
     steps:
-      - name: Write stop reason
-        run: |
-          echo "🚫 Build was stopped by local script due to BUILD_STOP_VALUE=true" >> $GITHUB_STEP_SUMMARY
+      - uses: actions/checkout@v4
+      - name: Build
+        run: echo "🏗️ Build running..."
