@@ -27,7 +27,7 @@ jobs:
               echo "stop_build=false" >> $GITHUB_OUTPUT
             fi
           else
-            echo "⚠️ No build_stop.txt file found — continuing build..
+            echo "⚠️ No build_stop.txt file found — continuing build.."
             echo "stop_build=false" >> $GITHUB_OUTPUT
           fi
 
