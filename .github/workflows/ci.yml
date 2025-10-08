@@ -22,7 +22,7 @@ jobs:
             if [ "$VALUE" = "true" ]; then
               echo "stop_build=true" >> $GITHUB_OUTPUT
               echo "🛑 Build stopped due to flag."
-              exit 0
+              exit 1
             fi
           fi
           echo "stop_build=false" >> $GITHUB_OUTPUT
