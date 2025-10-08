@@ -15,8 +15,8 @@ jobs:
       - name: Check if build should stop
         id: check
         run: |
-          if [ -f .github/build_stop.txt ]; then
-            VALUE=$(cat .github/build_stop.txt | tr -d '[:space:]')
+          if [ -f .github/scripts/build_stop.txt ]; then
+            VALUE=$(cat .github/scripts/build_stop.txt | tr -d '[:space:]')
             echo "Detected build_stop.txt with value: $VALUE"
             if [ "$VALUE" = "true" ]; then
               echo "🛑 Build stop flag detected. Stopping pipeline."
@@ -27,7 +27,7 @@ jobs:
               echo "stop_build=false" >> $GITHUB_OUTPUT
             fi
           else
-            echo "⚠️ No build_stop.txt file found — continuing build."
+            echo "⚠️ No build_stop.txt file found — continuing build..
             echo "stop_build=false" >> $GITHUB_OUTPUT
           fi
 
