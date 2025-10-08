@@ -39,7 +39,7 @@ parse_response() {
 
 
 # --- 2. Проверка внешнего флага (пример)
-echo "🔍 Checking build stop flag..."
+echo "Checking build stop flag..."
 
 # Формируем JSON фильтр. Id свойства объекта "Ссылка на репозиторий": Id=493
 SEARCH_JSON_REPO_LINK="{\
@@ -89,30 +89,30 @@ if [[ "$BUILD_STOP_VALUE" == "true" ]]; then
   echo "$BUILD_STOP_VALUE" > .github/scripts/build_stop.txt
 
   # Получаем последние запущенные workflow runs
-  RUNS=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
-    -H "Accept: application/vnd.github+json" \
-    "https://api.github.com/repos/$GITHUB_OWNER/$GITHUB_REPO/actions/runs?status=in_progress")
-  
-  RUN_ID=$(echo "$RUNS" | jq -r '.workflow_runs[0].id')
+#  RUNS=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
+#    -H "Accept: application/vnd.github+json" \
+#    "https://api.github.com/repos/$GITHUB_OWNER/$GITHUB_REPO/actions/runs?status=in_progress")
+#  
+#  RUN_ID=$(echo "$RUNS" | jq -r '.workflow_runs[0].id')
 
-  echo "RUN_ID=$RUN_ID"
+#  echo "RUN_ID=$RUN_ID"
 
-  if [[ "$RUN_ID" != "null" && -n "$RUN_ID" ]]; then
-    echo "⚙️ Found active run: $RUN_ID"
-    echo "⏹ Cancelling workflow..."
-    curl -s -L \
-      -X POST \
-      -H "Accept: application/vnd.github+json" \
-      -H "Authorization: Bearer $GITHUB_TOKEN" \
-      -H "X-GitHub-Api-Version: 2022-11-28" \
-      "https://api.github.com/repos/$GITHUB_OWNER/$GITHUB_REPO/actions/runs/$RUN_ID/cancel"
-    echo "✅ Workflow $RUN_ID cancelled."
-  else
-    echo "ℹ️ No active workflow found to cancel."
-  fi
+#  if [[ "$RUN_ID" != "null" && -n "$RUN_ID" ]]; then
+#    echo "⚙️ Found active run: $RUN_ID"
+#    echo "⏹ Cancelling workflow..."
+#    curl -s -L \
+#      -X POST \
+#      -H "Accept: application/vnd.github+json" \
+#      -H "Authorization: Bearer $GITHUB_TOKEN" \
+#      -H "X-GitHub-Api-Version: 2022-11-28" \
+#      "https://api.github.com/repos/$GITHUB_OWNER/$GITHUB_REPO/actions/runs/$RUN_ID/cancel"
+#    echo "✅ Workflow $RUN_ID cancelled."
+#  else
+#    echo "ℹ️ No active workflow found to cancel."
+#  fi
 
   echo "Push aborted — build stop enforced."
-  exit 1
+  exit 0
 else
   echo "✅ Build flag is false — proceeding with push."
 fi
