@@ -12,17 +12,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Get BUILD_STOP_VALUE
-        run: .github/scripts/getupdatedata_api.sh
-
       - name: Check if build should stop
         id: check
         run: |
-          if [ -f .github/build_stop.txt ] && grep -q "true" .github/build_stop.txt; then
-            echo "Build stop flag detected."
-            echo "stop_build=true" >> $GITHUB_OUTPUT
+          if [ -f .github/build_stop.txt ]; then
+            VALUE=$(cat .github/build_stop.txt | tr -d '[:space:]')
+            echo "Detected build_stop.txt with value: $VALUE"
+            if [ "$VALUE" = "true" ]; then
+              echo "🛑 Build stop flag detected. Stopping pipeline."
+              echo "stop_build=true" >> $GITHUB_OUTPUT
+              exit 0
+            else
+              echo "✅ Continue build."
+              echo "stop_build=false" >> $GITHUB_OUTPUT
+            fi
           else
-            echo "No stop flag, continue build."
+            echo "⚠️ No build_stop.txt file found — continuing build."
             echo "stop_build=false" >> $GITHUB_OUTPUT
           fi
 
