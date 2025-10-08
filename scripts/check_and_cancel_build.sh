@@ -4,10 +4,10 @@ set -e
 # --- 1. Настройки (ни один из этих токенов не хранится в GitHub!)
 # Секреты удалить после тестов!
 REPO_URL='https://github.com/DanielCamel/java_labs.git'
-SV_TOKEN=''
+SV_TOKEN='$SV_TOKEN'
 PROJECT_NAME='Java_Labs'
 GITHUB_OWNER='DanielCamel'
-GITHUB_TOKEN=''
+GITHUB_TOKEN='$GITHUB_TOKEN'
 
 
 REPO_ID=493 # Идентификатор свойства Ссылка на репозиторий
