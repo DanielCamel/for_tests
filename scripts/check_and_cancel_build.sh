@@ -88,7 +88,7 @@ if [[ "$BUILD_STOP_VALUE" == "true" ]]; then
 
   echo "$BUILD_STOP_VALUE" > .github/scripts/build_stop.txt
   echo "Push aborted — build stop enforced."
-  exit 1
+  exit 0
 else
 
   echo "$BUILD_STOP_VALUE" > .github/scripts/build_stop.txt
