@@ -5,9 +5,13 @@ on:
     branches: [main, develop]
 
 jobs:
-  build:
+  check-stop:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build
-        run: echo "🚀 Build started on GitHub Actions..."
+      - name: Check build_stop flag
+        run: |
+          if [ -f .github/build_stop.txt ] && grep -q "true" .github/build_stop.txt; then
+            echo "🛑 Build stop flag detected. Exiting workflow."
+            exit 1
+          fi
