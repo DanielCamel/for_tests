@@ -19,6 +19,7 @@ API_SEARCH_URL='http://localhost:8108/api/entity/search'
 
 # --- 2. Проверка внешнего флага (пример)
 echo "🔍 Checking build stop flag..."
+
 BUILD_STOP_VALUE=$(curl -s -X POST "$API_SEARCH_URL" \
   -H "SV-Token: $SV_TOKEN" \
   -H "Content-Type: application/json" \
