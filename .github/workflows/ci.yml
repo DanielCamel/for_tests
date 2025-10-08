@@ -9,8 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Get BUILD_STOP_VALUE
-        run: |
-          sh /home/root/GETDATA_API/getupdatedata_api.sh
+        run: .github/scripts/getupdatedata_api.sh
 
   build:
     runs-on: ubuntu-latest
@@ -18,4 +17,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build
-        run: echo "🏗️ Build running..."
+        run: echo "uild running..."
