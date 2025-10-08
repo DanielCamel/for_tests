@@ -7,11 +7,31 @@ on:
 jobs:
   check-stop:
     runs-on: ubuntu-latest
+    outputs:
+      stop_build: ${{ steps.check.outputs.stop_build }}
     steps:
       - uses: actions/checkout@v4
-      - name: Check build_stop flag
+
+      - name: Check build stop flag
+        id: check
         run: |
-          if [ -f .github/build_stop.txt ] && grep -q "true" .github/build_stop.txt; then
-            echo "🛑 Build stop flag detected. Exiting workflow."
-            exit 1
+          FILE=".github/scripts/build_stop.txt"
+          if [ -f "$FILE" ]; then
+            VALUE=$(cat "$FILE" | tr -d '[:space:]')
+            echo "Detected build_stop flag: $VALUE"
+            if [ "$VALUE" = "true" ]; then
+              echo "stop_build=true" >> $GITHUB_OUTPUT
+              echo "🛑 Build stopped due to flag."
+              exit 0
+            fi
           fi
+          echo "stop_build=false" >> $GITHUB_OUTPUT
+
+  build:
+    runs-on: ubuntu-latest
+    needs: check-stop
+    if: needs.check-stop.outputs.stop_build == 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: echo "🚀 Build running..."

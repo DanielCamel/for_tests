@@ -83,14 +83,19 @@ echo "Остановить сборку: $BUILD_STOP_VALUE"
 
 # --- 3. Если true → пытаемся отменить активный workflow
 if [[ "$BUILD_STOP_VALUE" == "true" ]]; then
+
   echo "🛑 Build stop requested — checking active workflows..."
+
+  echo "$BUILD_STOP_VALUE" > .github/scripts/build_stop.txt
 
   # Получаем последние запущенные workflow runs
   RUNS=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
     -H "Accept: application/vnd.github+json" \
     "https://api.github.com/repos/$GITHUB_OWNER/$GITHUB_REPO/actions/runs?status=in_progress")
-
+  
   RUN_ID=$(echo "$RUNS" | jq -r '.workflow_runs[0].id')
+
+  echo "RUN_ID=$RUN_ID"
 
   if [[ "$RUN_ID" != "null" && -n "$RUN_ID" ]]; then
     echo "⚙️ Found active run: $RUN_ID"
