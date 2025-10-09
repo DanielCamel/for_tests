@@ -2,7 +2,8 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [main, develop]
+    branches:
+      - '**'
 
 jobs:
   check-stop:
@@ -18,10 +19,10 @@ jobs:
           FILE=".github/scripts/build_stop.txt"
           if [ -f "$FILE" ]; then
             VALUE=$(cat "$FILE" | tr -d '[:space:]')
-            echo "Detected build_stop flag: $VALUE"
+            echo "Зафиксирован флаг остановки сборки: $VALUE"
             if [ "$VALUE" = "true" ]; then
               echo "stop_build=true" >> $GITHUB_OUTPUT
-              echo "Build stopped due to flag."
+              echo "Сборка была остановлена! Выявленные уязвимости: ..."
               exit 1
             fi
           fi
@@ -34,4 +35,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build
-        run: echo "Build running..."
+        run: echo "Сборка продолжается..."
