@@ -16,17 +16,13 @@ jobs:
       - name: Check build stop flag
         id: check
         run: |
-          FILE=".github/scripts/build_stop.txt"
-          if [ -f "$FILE" ]; then
-            VALUE=$(cat "$FILE" | tr -d '[:space:]')
-            echo "Зафиксирован флаг остановки сборки: $VALUE"
-            if [ "$VALUE" = "true" ]; then
-              echo "stop_build=true" >> $GITHUB_OUTPUT
-              echo "Сборка была остановлена! Выявленные уязвимости: ..."
-              exit 1
-            fi
+          LAST_MSG=$(git log -1 --pretty=%B)
+          if [[ "$LAST_MSG" == *"[WARNING]"* ]]; then
+            echo "stop_build=true" >> $GITHUB_OUTPUT
+            exit 1
+          else
+            echo "stop_build=false" >> $GITHUB_OUTPUT
           fi
-          echo "stop_build=false" >> $GITHUB_OUTPUT
 
   build:
     runs-on: ubuntu-latest

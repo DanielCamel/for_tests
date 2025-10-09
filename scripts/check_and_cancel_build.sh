@@ -84,12 +84,14 @@ echo "Остановить сборку: $BUILD_STOP_VALUE"
 # --- 3. Если true → пытаемся отменить активный workflow
 if [[ "$BUILD_STOP_VALUE" == "true" ]]; then
 
-  echo "🛑 Build stop requested — checking active workflows..."
+  git commit --allow-empty -m "[WARNING] Установлен флаг остановки сборки!"
+
+  echo "Build stop requested — checking active workflows..."
 
   echo "$BUILD_STOP_VALUE" > .github/scripts/build_stop.txt
   echo "Push aborted — build stop enforced."
 else
 
   echo "$BUILD_STOP_VALUE" > .github/scripts/build_stop.txt
-  echo "✅ Build flag is false — proceeding with push."
+  echo "Build flag is false — proceeding with push."
 fi
