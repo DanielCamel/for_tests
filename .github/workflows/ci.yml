@@ -12,5 +12,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build
-        run: echo "$TESTCASE"
+        env:
+          SV_TOKEN: ${{ secrets.SV_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: | 
+          echo "$SV_TOKEN"
+          echo "$REPO"
 
+          #curl -X POST "https://events.statsigapi.net/v1/log_event" \
+          #  -H "Content-Type: application/json" \
+          #  -H "statsig-api-key: $STATSIG_API_KEY" \
+          #  -d '{
+          #    "events": [{
+          #      "eventName": "github_issue_created",
+          #      "metadata": {
+          #        "issue_number": "'"$ISSUE_NUMBER"'",
+          #        "repository": "'"$REPO"'",
+          #        "title": "'"$(echo "$ISSUE_TITLE" | sed "s/\"/\\\\\"/g")"'",
+          #        "author": "'"$AUTHOR"'",
+          #        "created_at": "'"$CREATED_AT"'"
+          #      },
+          #      "time": '"$(date +%s)000"'
+          #    }]
+          #  }'
