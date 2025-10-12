@@ -15,11 +15,10 @@ jobs:
         env:
           SV_TOKEN: ${{ secrets.SV_TOKEN }}
           REPO: ${{ github.repository }}
-        run: |  
+        run: | 
           REPO_FULL="${{ github.repository }}"
           echo "$REPO_FULL"
           echo "$REPO"
-	
           #curl -X POST "https://events.statsigapi.net/v1/log_event" \
           #  -H "Content-Type: application/json" \
           #  -H "statsig-api-key: $STATSIG_API_KEY" \
