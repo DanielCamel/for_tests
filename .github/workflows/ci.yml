@@ -15,8 +15,8 @@ jobs:
         env:
           SV_TOKEN: ${{ secrets.SV_TOKEN }}
           REPO: ${{ github.repository }}
-        run: | 
-	  REPO_FULL="${{ github.repository }}"
+        run: |  
+          REPO_FULL="${{ github.repository }}"
           echo "$REPO_FULL"
           echo "$REPO"
 	
