@@ -1,0 +1,199 @@
+const { body, validationResult } = require('express-validator')
+const errors = require('./error')
+const error = new errors.CveControllerError()
+const utils = require('../../utils/utils')
+const fs = require('fs')
+const RejectedSchema = JSON.parse(fs.readFileSync('src/middleware/schemas/5.1.1_rejected_cna_container.json'))
+const cnaContainerSchema = JSON.parse(fs.readFileSync('src/middleware/schemas/5.1.1_published_cna_container.json'))
+const logger = require('../../middleware/logger')
+const Ajv = require('ajv')
+const addFormats = require('ajv-formats')
+const ajv = new Ajv({ allErrors: false })
+addFormats(ajv)
+const validateRejected = ajv.compile(RejectedSchema)
+const validateCnaContainer = ajv.compile(cnaContainerSchema)
+
+function parsePostParams (req, res, next) {
+  utils.reqCtxMapping(req, 'body', [])
+  utils.reqCtxMapping(req, 'params', ['id'])
+  next()
+}
+
+function parseGetParams (req, res, next) {
+  utils.reqCtxMapping(req, 'query', ['page', 'time_modified.lt', 'time_modified.gt', 'state', 'count_only', 'assigner_short_name', 'assigner', 'cna_modified', 'adp_short_name', 'next_page', 'previous_page', 'limit'])
+  utils.reqCtxMapping(req, 'params', ['id'])
+  next()
+}
+
+function parseError (req, res, next) {
+  const err = validationResult(req).formatWith(({ location, msg, param, value, nestedErrors }) => {
+    return { msg: msg, param: param, location: location }
+  })
+  if (!err.isEmpty()) {
+    return res.status(400).json(error.badInput(err.array()))
+  }
+  next()
+}
+
+/**
+ * Custom body validation for unique English entries in the value of the array index passed.
+ * (Schema validation checks a unique combination of lang + text value, so we don't here.)
+ *
+ * @param {String} langsIndex
+ * @returns Result
+ */
+function validateUniqueEnglishEntry (langsIndex) {
+  // The JSON format itself is enforced in the schema validation, so we only need
+  // to check the fields if they were passed, so can use optional()
+  return body(langsIndex).optional({ nullable: true }).isArray().custom((langsArr, { req, path }) => {
+    // the passed in keys are ORs, not ANDs
+    if (langsArr === undefined) {
+      return true
+    }
+
+    if (hasSingleEnglishEntry(langsArr)) {
+      return true
+    } else {
+      // duplicate found so send error
+      throw new Error(`Cannot have more than one English language entry in '${path}'`)
+    }
+  })
+}
+
+/**
+ * Check that the array passed contains only 1 unique English language code entry
+ *
+ *  - Pass: Duplicate non-English codes (fr and fr)
+ *  - Pass: > 1 different English codes (en and en-ca)
+ *  - Fail: > 1 same English codes (en & en, en-gb & en-gb)
+ *
+ * @param {Array} langsArr
+ * @returns true
+ * @throws Error
+ */
+function hasSingleEnglishEntry (langsArr) {
+  const foundValues = new Set()
+
+  for (const entry of langsArr) {
+    const lang = entry.lang.toLowerCase()
+
+    // ignore non-English
+    if (!lang.startsWith('en')) {
+      continue
+    }
+
+    // return early if a duplicate is found
+    if (foundValues.has(lang)) {
+      return false
+    }
+
+    // add each unique value to set
+    foundValues.add(lang)
+  }
+
+  return true
+}
+
+/**
+ * Temporary description validator that ensures description fields have at least 1 non-whitespace character
+ *
+ * @param {String} descIndex
+ * @returns true
+ * @throws Error
+ */
+function validateDescription (descIndex) {
+  // For each index, check if it exists, then apply custom validator
+  return body(descIndex).optional({ nullable: true }).isArray().custom((descriptions, { req, path }) => {
+    // For each array of descriptions, check if at least one non-whitespace character
+    for (const desc of descriptions) {
+      // Some descriptions use 'value' for field name, problemTypes uses 'description'
+      return (!!desc.value?.trim().length || !!desc.description?.trim().length)
+    }
+  })
+}
+
+function validateRejectBody (req, res, next) {
+  const rejectBody = req.body
+  const result = validateRejected(rejectBody) // validate function is based on custom schema
+
+  if (!result) {
+    const temp = validateRejected.errors
+    const errors = []
+    temp.forEach((error) => {
+      if (error !== '') {
+        errors.push(error)
+      }
+    })
+    return res.status(400).json(error.invalidJsonSchema(errors))
+  }
+  next()
+}
+
+function validateCveCnaContainerJsonSchema (req, res, next) {
+  const cnaContainer = req.body
+  const result = validateCnaContainer(cnaContainer)
+  if (!result) {
+    logger.error(JSON.stringify({ uuid: req.ctx.uuid, message: 'CVE JSON schema validation FAILED.' }))
+    const temp = validateCnaContainer.errors
+    const errorsArray = []
+    temp.forEach((error) => {
+      if (error !== '') {
+        errorsArray.push(error)
+      }
+    })
+    return res.status(400).json(error.invalidCnaContainerJsonSchema(errorsArray))
+  }
+  logger.info(JSON.stringify({ uuid: req.ctx.uuid, message: 'SUCCESSFUL CVE JSON schema validation.' }))
+  next()
+}
+
+/**
+ * Checks that datePublic field is not a future date
+ * Note: As of 01/10/24, this is not utilized. Further discussion is needed to agree on an
+ * implementation that will be less disruptive but still prevents invalid data.
+ *
+ * @param {String} dateIndex
+ * @returns true
+ * @throws Error
+ */
+function validateDatePublic (dateIndex) {
+  // Check if datePublic is a future date
+  return body(dateIndex).isString().withMessage('DatePublic must be a date string').optional({ nullable: true }).bail().custom((datePublic) => {
+    if (datePublicHelper(datePublic)) {
+      return true
+    }
+    throw new Error('datePublic cannot be a future date')
+  })
+}
+
+function datePublicHelper (datePublic) {
+  const currentDate = new Date().toISOString()
+
+  // Allows for a 24 grace period before provided datePublic date
+  let datePublicWithGracePeriod = new Date(datePublic)
+  datePublicWithGracePeriod.setDate(datePublicWithGracePeriod.getDate() - 1)
+  datePublicWithGracePeriod = datePublicWithGracePeriod.toISOString()
+
+  return currentDate > datePublicWithGracePeriod
+}
+
+// Organizations in the ADP pilot are generating JSON programatically, and thus
+// informing them about the result of the final validation (against the full
+// CVE Record schema) is currently sufficient.
+function validateCveAdpContainerJsonSchema (req, res, next) {
+  next()
+}
+
+module.exports = {
+  parseGetParams,
+  parsePostParams,
+  parseError,
+  validateCveCnaContainerJsonSchema,
+  validateCveAdpContainerJsonSchema,
+  validateUniqueEnglishEntry,
+  hasSingleEnglishEntry,
+  validateDescription,
+  validateRejectBody,
+  validateDatePublic,
+  datePublicHelper
+}

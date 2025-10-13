@@ -1,0 +1,18 @@
+// Error message strings to be used in controller/index.js files
+
+module.exports = {
+  ORG_ROLES: 'Invalid role. Valid roles are CNA, SECRETARIAT',
+  USER_ROLES: 'Invalid role. Valid role is ADMIN',
+  ID_QUOTA: 'The id_quota does not comply with CVE id quota limitations',
+  ID_STATES: 'Invalid CVE ID state. Valid states are: RESERVED, PUBLISHED, REJECTED',
+  ID_MODIFY_STATES: 'Invalid CVE ID state. Valid states are: RESERVED, REJECTED',
+  CVE_FILTERED_STATES: 'Invalid record state. Valid states are: PUBLISHED, REJECTED',
+  COUNT_ONLY: 'Invalid count_only value. Value should be 1, true, or yes to indicate true, or 0, false, or no to indicate false',
+  TIMESTAMP_FORMAT: "Bad date, or invalid timestamp format: valid format is yyyy-MM-ddTHH:mm:ss or yyyy-MM-ddTHH:mm:ssZZ:ZZ (to use '+' in timezone offset, encode as '%2B). ZZ:ZZ (if used) must be between 00:00 and 23:59.",
+  CNA_MODIFIED: 'Invalid cna_modified value. Value should be 1, true, or yes to indicate true, or 0, false, or no to indicate false',
+  ERLCHECK: 'Invalid erlcheck value. Value should be 1, true, or yes to indicate true, or 0, false, or no to indicate false',
+  FIRSTNAME_LENGTH: 'Invalid name.first. Name must be between 1 and 100 characters in length.',
+  LASTNAME_LENGTH: 'Invalid name.last. Name must be between 1 and 100 characters in length.',
+  MIDDLENAME_LENGTH: 'Invalid name.middle. Name must be between 1 and 100 characters in length.',
+  SUFFIX_LENGTH: 'Invalid name.suffix. Name must be between 1 and 100 characters in length.'
+}

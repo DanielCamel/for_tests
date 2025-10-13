@@ -1,0 +1,364 @@
+
+// Schemas relating to CVE records
+async function getCreateCveRecordResponseSchema (req, res) {
+  const createCveRecordResponseSchema = require('../../../schemas/cve/create-cve-record-response.json')
+  res.json(createCveRecordResponseSchema)
+  res.status(200)
+}
+
+async function getCreateCveRecordRejectionRequestSchema (req, res) {
+  const createCveRecordRejectionRequestSchema = require('../../../schemas/cve/create-cve-record-rejection-request.json')
+  res.json(createCveRecordRejectionRequestSchema)
+  res.status(200)
+}
+
+async function getCreateCveRecordRejectionResponseSchema (req, res) {
+  const createCveRecordRejectionResponseSchema = require('../../../schemas/cve/create-cve-record-rejection-response.json')
+  res.json(createCveRecordRejectionResponseSchema)
+  res.status(200)
+}
+
+async function getUpdateCveRecordRejectionRequestSchema (req, res) {
+  const updateCveRecordRejectionRequestSchema = require('../../../schemas/cve/update-cve-record-rejection-request.json')
+  res.json(updateCveRecordRejectionRequestSchema)
+  res.status(200)
+}
+
+async function getUpdateCveRecordRejectionResponseSchema (req, res) {
+  const updateCveRecordRejectionResponseSchema = require('../../../schemas/cve/update-cve-record-rejection-response.json')
+  res.json(updateCveRecordRejectionResponseSchema)
+  res.status(200)
+}
+
+async function getCveRecordMinimumSchema (req, res) {
+  const cveRecordMinimumSchema = require('../../../schemas/cve/cve-record-minimum-request.json')
+  res.json(cveRecordMinimumSchema)
+  res.status(200)
+}
+
+async function getCveRecordResponseSchema (req, res) {
+  const cveRecordSchema = require('../../../schemas/cve/get-cve-record-response.json')
+  res.json(cveRecordSchema)
+  res.status(200)
+}
+
+async function getFullCveRecordRequestSchema (req, res) {
+  const getFullCveRecordRequestSchema = require('../../../schemas/cve/create-full-cve-record-request.json')
+  res.json(getFullCveRecordRequestSchema)
+  res.status(200)
+}
+
+async function getFullUpdateCveRecordResponseSchema (req, res) {
+  const getFullUpdateCveRecordResponseSchema = require('../../../schemas/cve/update-full-cve-record-response.json')
+  res.json(getFullUpdateCveRecordResponseSchema)
+  res.status(200)
+}
+
+async function getListCveRecordsResponseSchema (req, res) {
+  const listCveRecordsSchema = require('../../../schemas/cve/list-cve-records-response.json')
+  res.json(listCveRecordsSchema)
+  res.status(200)
+}
+
+async function getCursorCveRecordsResponseSchema (req, res) {
+  const cursorCveRecordsSchema = require('../../../schemas/cve/cursor-cve-records-response.json')
+  res.json(cursorCveRecordsSchema)
+  res.status(200)
+}
+
+async function getUpdateCveRecordResponseSchema (req, res) {
+  const updateCveRecordResponseSchema = require('../../../schemas/cve/update-cve-record-response.json')
+  res.json(updateCveRecordResponseSchema)
+  res.status(200)
+}
+
+async function getAdpMinimumSchema (req, res) {
+  const adpMinimumSchema = require('../../../schemas/cve/adp-minimum-request.json')
+  res.json(adpMinimumSchema)
+  res.status(200)
+}
+
+async function getCnaFullSchema (req, res) {
+  const cnaFullSchema = require('../../../schemas/cve/create-cve-record-cna-request.json')
+  res.json(cnaFullSchema)
+  res.status(200)
+}
+
+async function getCnaMinSchema (req, res) {
+  const cnaMinSchema = require('../../../schemas/cve/cna-minimum-request.json')
+  res.json(cnaMinSchema)
+  res.status(200)
+}
+
+async function getAdpFullSchema (req, res) {
+  const adpFullSchema = require('../../../schemas/cve/create-adp-record-adp-request.json')
+  res.json(adpFullSchema)
+  res.status(200)
+}
+
+async function getCnaSecretariatFullSchema (req, res) {
+  const cnaFullSchemaSecretariat = require('../../../schemas/cve/create-cve-record-secretariat-request.json')
+  res.json(cnaFullSchemaSecretariat)
+  res.status(200)
+}
+
+// Schemas relating to CVE IDs
+async function getCreateCveIdsResponseSchema (req, res) {
+  const createCveIdsResponseSchema = require('../../../schemas/cve-id/create-cve-ids-response.json')
+  res.json(createCveIdsResponseSchema)
+  res.status(200)
+}
+
+async function getCreateCveIdsPartialResponseSchema (req, res) {
+  const createCveIdsPartialResponseSchema = require('../../../schemas/cve-id/create-cve-ids-partial-response.json')
+  res.json(createCveIdsPartialResponseSchema)
+  res.status(200)
+}
+
+async function getCveIdResponseSchema (req, res) {
+  const getCveIdResponseSchema = require('../../../schemas/cve-id/get-cve-id-response.json')
+  res.json(getCveIdResponseSchema)
+  res.status(200)
+}
+
+async function getListCveIdsResponseSchema (req, res) {
+  const listCveIdsResponseSchema = require('../../../schemas/cve-id/list-cve-ids-response.json')
+  res.json(listCveIdsResponseSchema)
+  res.status(200)
+}
+
+async function getUpdateCVEIdResponseSchema (req, res) {
+  const updateCveIdsResponseSchema = require('../../../schemas/cve-id/update-cve-id-response.json')
+  res.json(updateCveIdsResponseSchema)
+  res.status(200)
+}
+
+// Schemas relating to errors
+async function getBadRequestSchema (req, res) {
+  const badRequestSchema = require('../../../schemas/errors/bad-request.json')
+  res.json(badRequestSchema)
+  res.status(200)
+}
+
+async function getGenericErrorSchema (req, res) {
+  const genericErrorSchema = require('../../../schemas/errors/generic.json')
+  res.json(genericErrorSchema)
+  res.status(200)
+}
+
+// Schemas relating to organizations
+
+async function getCreateOrgRequestSchema (req, res) {
+  const createOrgRequestSchema = require('../../../schemas/org/create-org-request.json')
+  res.json(createOrgRequestSchema)
+  res.status(200)
+}
+
+async function getCreateOrgResponseSchema (req, res) {
+  const createOrgResponseSchema = require('../../../schemas/org/create-org-response.json')
+  res.json(createOrgResponseSchema)
+  res.status(200)
+}
+
+async function getListOrgsResponseSchema (req, res) {
+  const listOrgsResponseSchema = require('../../../schemas/org/list-orgs-response.json')
+  res.json(listOrgsResponseSchema)
+  res.status(200)
+}
+
+async function getOrgResponseSchema (req, res) {
+  const getOrgResponseSchema = require('../../../schemas/org/get-org-response.json')
+  res.json(getOrgResponseSchema)
+  res.status(200)
+}
+
+async function getOrgQuotaResponseSchema (req, res) {
+  const getOrgQuotaResponseSchema = require('../../../schemas/org/get-org-quota-response.json')
+  res.json(getOrgQuotaResponseSchema)
+  res.status(200)
+}
+
+async function getUpdateOrgResponseSchema (req, res) {
+  const updateOrgResponseSchema = require('../../../schemas/org/update-org-response.json')
+  res.json(updateOrgResponseSchema)
+  res.status(200)
+}
+
+// Schemas relating to users
+
+async function getCreateUserRequestSchema (req, res) {
+  const createUserRequestSchema = require('../../../schemas/user/create-user-request.json')
+  res.json(createUserRequestSchema)
+  res.status(200)
+}
+
+async function getCreateUserResponseSchema (req, res) {
+  const createUserResponseSchema = require('../../../schemas/user/create-user-response.json')
+  res.json(createUserResponseSchema)
+  res.status(200)
+}
+
+async function getListUsersSchema (req, res) {
+  const listUsersResponseSchema = require('../../../schemas/user/list-users-response.json')
+  res.json(listUsersResponseSchema)
+  res.status(200)
+}
+
+async function getUserResponseSchema (req, res) {
+  const getUserResponseSchema = require('../../../schemas/user/get-user-response.json')
+  res.json(getUserResponseSchema)
+  res.status(200)
+}
+
+async function getResetSecretResponseSchema (req, res) {
+  const resetSecretResponseSchema = require('../../../schemas/user/reset-secret-response.json')
+  res.json(resetSecretResponseSchema)
+  res.status(200)
+}
+
+async function getUpdateUserResponseSchema (req, res) {
+  const updateUserResponseSchema = require('../../../schemas/user/update-user-response.json')
+  res.json(updateUserResponseSchema)
+  res.status(200)
+}
+
+async function getCveCountResponseSchema (req, res) {
+  const cveCountResponseSchema = require('../../../schemas/cve/get-cve-record-count.json')
+  res.json(cveCountResponseSchema)
+  res.status(200)
+}
+
+// Schemas relating to Registry Orgs
+
+async function getCreateRegistryOrgRequestSchema (req, res) {
+  const createRegistryOrgRequestSchema = require('../../../schemas/registry-org/create-registry-org-request.json')
+  res.json(createRegistryOrgRequestSchema)
+  res.status(200)
+}
+
+async function getCreateRegistryOrgResponseSchema (req, res) {
+  const createRegistryOrgResponseSchema = require('../../../schemas/registry-org/create-registry-org-response.json')
+  res.json(createRegistryOrgResponseSchema)
+  res.status(200)
+}
+
+async function getRegistryOrgResponseSchema (req, res) {
+  const registryOrgResponseSchema = require('../../../schemas/registry-org/get-registry-org-response.json')
+  res.json(registryOrgResponseSchema)
+  res.status(200)
+}
+
+async function getRegistryOrgQuotaResponseSchema (req, res) {
+  const registryOrgQuotaResponseSchema = require('../../../schemas/registry-org/get-registry-org-quota-response.json')
+  res.json(registryOrgQuotaResponseSchema)
+  res.status(200)
+}
+
+async function getListRegistryOrgsResponseSchema (req, res) {
+  const listRegistryOrgsResponseSchema = require('../../../schemas/registry-org/list-registry-orgs-response.json')
+  res.json(listRegistryOrgsResponseSchema)
+  res.status(200)
+}
+
+async function getUpdateRegistryOrgRequestSchema (req, res) {
+  const updateRegistryOrgRequestSchema = require('../../../schemas/registry-org/update-registry-org-request.json')
+  res.json(updateRegistryOrgRequestSchema)
+  res.status(200)
+}
+
+async function getUpdateRegistryOrgResponseSchema (req, res) {
+  const updateRegistryOrgResponseSchema = require('../../../schemas/registry-org/update-registry-org-response.json')
+  res.json(updateRegistryOrgResponseSchema)
+  res.status(200)
+}
+
+// Schemas relating to Registry Users
+
+async function getCreateRegistryUserRequestSchema (req, res) {
+  const createRegistryUserRequestSchema = require('../../../schemas/registry-user/create-registry-user-request.json')
+  res.json(createRegistryUserRequestSchema)
+  res.status(200)
+}
+
+async function getCreateRegistryUserResponseSchema (req, res) {
+  const createRegistryUserResponseSchema = require('../../../schemas/registry-user/create-registry-user-response.json')
+  res.json(createRegistryUserResponseSchema)
+  res.status(200)
+}
+
+async function getRegistryUserResponseSchema (req, res) {
+  const registryUserResponseSchema = require('../../../schemas/registry-user/get-registry-user-response.json')
+  res.json(registryUserResponseSchema)
+  res.status(200)
+}
+
+async function getListRegistryUsersResponseSchema (req, res) {
+  const listRegistryUsersResponseSchema = require('../../../schemas/registry-user/list-registry-users-response.json')
+  res.json(listRegistryUsersResponseSchema)
+  res.status(200)
+}
+
+async function getUpdateRegistryUserRequestSchema (req, res) {
+  const updateRegistryUserRequestSchema = require('../../../schemas/registry-user/update-registry-user-request.json')
+  res.json(updateRegistryUserRequestSchema)
+  res.status(200)
+}
+
+async function getUpdateRegistryUserResponseSchema (req, res) {
+  const updateRegistryUserResponseSchema = require('../../../schemas/registry-user/update-registry-user-response.json')
+  res.json(updateRegistryUserResponseSchema)
+  res.status(200)
+}
+
+module.exports = {
+  getBadRequestSchema: getBadRequestSchema,
+  getCreateCveRecordResponseSchema: getCreateCveRecordResponseSchema,
+  getCreateCveRecordRejectionRequestSchema: getCreateCveRecordRejectionRequestSchema,
+  getCreateCveRecordRejectionResponseSchema: getCreateCveRecordRejectionResponseSchema,
+  getUpdateCveRecordRejectionRequestSchema: getUpdateCveRecordRejectionRequestSchema,
+  getUpdateCveRecordRejectionResponseSchema: getUpdateCveRecordRejectionResponseSchema,
+  getCveRecordMinimumSchema: getCveRecordMinimumSchema,
+  getCveRecordResponseSchema: getCveRecordResponseSchema,
+  getFullCveRecordRequestSchema: getFullCveRecordRequestSchema,
+  getFullUpdateCveRecordResponseSchema: getFullUpdateCveRecordResponseSchema,
+  getListCveRecordsResponseSchema: getListCveRecordsResponseSchema,
+  getCursorCveRecordsResponseSchema: getCursorCveRecordsResponseSchema,
+  getUpdateCveRecordResponseSchema: getUpdateCveRecordResponseSchema,
+  getCreateCveIdsResponseSchema: getCreateCveIdsResponseSchema,
+  getCreateCveIdsPartialResponseSchema: getCreateCveIdsPartialResponseSchema,
+  getCveIdResponseSchema: getCveIdResponseSchema,
+  getListCveIdsResponseSchema: getListCveIdsResponseSchema,
+  getGenericErrorSchema: getGenericErrorSchema,
+  getCreateOrgRequestSchema: getCreateOrgRequestSchema,
+  getCreateOrgResponseSchema: getCreateOrgResponseSchema,
+  getListOrgsResponseSchema: getListOrgsResponseSchema,
+  getOrgResponseSchema: getOrgResponseSchema,
+  getOrgQuotaResponseSchema: getOrgQuotaResponseSchema,
+  getUpdateOrgResponseSchema: getUpdateOrgResponseSchema,
+  getCreateUserRequestSchema: getCreateUserRequestSchema,
+  getCreateUserResponseSchema: getCreateUserResponseSchema,
+  getListUsersSchema: getListUsersSchema,
+  getUserResponseSchema: getUserResponseSchema,
+  getResetSecretResponseSchema: getResetSecretResponseSchema,
+  getUpdateUserResponseSchema: getUpdateUserResponseSchema,
+  getUpdateCVEIdResponseSchema: getUpdateCVEIdResponseSchema,
+  getAdpMinimumSchema: getAdpMinimumSchema,
+  getCnaFullSchema: getCnaFullSchema,
+  getAdpFullSchema: getAdpFullSchema,
+  getCnaSecretariatFullSchema: getCnaSecretariatFullSchema,
+  getCnaMinSchema: getCnaMinSchema,
+  getCveCountResponseSchema: getCveCountResponseSchema,
+  getCreateRegistryOrgRequestSchema: getCreateRegistryOrgRequestSchema,
+  getCreateRegistryOrgResponseSchema: getCreateRegistryOrgResponseSchema,
+  getRegistryOrgResponseSchema: getRegistryOrgResponseSchema,
+  getRegistryOrgQuotaResponseSchema: getRegistryOrgQuotaResponseSchema,
+  getListRegistryOrgsResponseSchema: getListRegistryOrgsResponseSchema,
+  getUpdateRegistryOrgRequestSchema: getUpdateRegistryOrgRequestSchema,
+  getUpdateRegistryOrgResponseSchema: getUpdateRegistryOrgResponseSchema,
+  getCreateRegistryUserRequestSchema: getCreateRegistryUserRequestSchema,
+  getCreateRegistryUserResponseSchema: getCreateRegistryUserResponseSchema,
+  getRegistryUserResponseSchema: getRegistryUserResponseSchema,
+  getListRegistryUsersResponseSchema: getListRegistryUsersResponseSchema,
+  getUpdateRegistryUserRequestSchema: getUpdateRegistryUserRequestSchema,
+  getUpdateRegistryUserResponseSchema: getUpdateRegistryUserResponseSchema
+}
