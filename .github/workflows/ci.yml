@@ -1,0 +1,88 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - '**'
+
+jobs:
+  check-stop:
+    runs-on: ubuntu-latest
+    outputs:
+      stop_build: ${{ steps.check.outputs.stop_build }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check build stop flag
+        env:
+          SV_TOKEN: ${{ secrets.SV_TOKEN }}
+          REPO_URL: ${{ github.repository }}
+        id: check
+        run: |
+            REPO_ID=493
+            PROJECT_NAME_ID=3
+            BUILD_STOP_ID=648
+            API_UPDATE_URL='http://localhost:8108/api/entity/update'
+            API_SEARCH_URL='http://localhost:8108/api/entity/search'
+            PROJECT_NAME='Java_Labs'
+
+            # Функция обработки ответа API
+            parse_response() {
+              local response="$1"
+              local http_code=$(echo "$response" | tail -n1)
+              # Всё кроме последней строки — тело
+              local content=$(echo "$response" | sed '$d')
+              if [ "$http_code" -ne 200 ]; then
+                echo "Ошибка API: HTTP $http_code"
+                echo "Ответ: $content"
+                exit 1
+              fi
+
+            # Возвращаем тело через echo
+            echo "$content"
+            }
+
+            # Формируем JSON фильтр. Id свойства объекта "Ссылка на репозиторий": Id=493
+            SEARCH_JSON_REPO_LINK="{"skip\":0,\
+            \"top\":5,\
+            \"outputproperties\":[\
+            {\"id\": \"$BUILD_STOP_ID\"},{\"id\": \"$REPO_ID\"},{\"id\": \"$PROJECT_NAME_ID\"}\
+            ],\
+            \"filter\":{\
+            \"type\": \"and\",\
+            \"conditions\":[
+            {\
+            \"type\":\"property\",\
+            \"id\": $REPO_ID,\
+            \"operator\": \"like\",\
+            \"value\": \"$REPO_URL\"\
+            },\
+            {\
+            \"type\":\"property\",\
+            \"id\": $PROJECT_NAME_ID,\
+            \"operator\": \"like\",\
+            \"value\": \"$PROJECT_NAME\"}]}}"
+
+            # Выполняем запрос для получения информации о проекте
+            search_response=$(curl -s -w "\n%{http_code}" -X POST "$API_SEARCH_URL" -H "SV-Token: $SV_TOKEN" -H "Content-Type: application/json" -d "$SEARCH_JSON_REPO_LINK")
+            search_content=$(parse_response "$search_response")
+
+            BUILD_STOP_VALUE="$(echo "$search_content" | jq -r '.result[0].properties[0].value')"
+
+            # Проверка флага остановки сборки проекта
+            if [ "$BUILD_STOP_VALUE" = "true" ]; then
+              echo "[WARNING] Установлен флаг остановки сборки!<Описание уяз-тей>"
+              echo "stop_build=true" >> $GITHUB_OUTPUT
+             exit 1
+            else
+              echo "stop_build=false" >> $GITHUB_OUTPUT
+            fi
+
+  build:
+    runs-on: ubuntu-latest
+    needs: check-stop
+    if: needs.check-stop.outputs.stop_build == 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: echo "Сборка продолжается..."
