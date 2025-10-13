@@ -43,25 +43,7 @@ jobs:
             }
 
             # Формируем JSON фильтр. Id свойства объекта "Ссылка на репозиторий": Id=493
-            SEARCH_JSON_REPO_LINK="{"skip\":0,\
-            \"top\":5,\
-            \"outputproperties\":[\
-            {\"id\": \"$BUILD_STOP_ID\"},{\"id\": \"$REPO_ID\"},{\"id\": \"$PROJECT_NAME_ID\"}\
-            ],\
-            \"filter\":{\
-            \"type\": \"and\",\
-            \"conditions\":[
-            {\
-            \"type\":\"property\",\
-            \"id\": $REPO_ID,\
-            \"operator\": \"like\",\
-            \"value\": \"$REPO_URL\"\
-            },\
-            {\
-            \"type\":\"property\",\
-            \"id\": $PROJECT_NAME_ID,\
-            \"operator\": \"like\",\
-            \"value\": \"$PROJECT_NAME\"}]}}"
+            SEARCH_JSON_REPO_LINK="{"skip\":0,"top\":5,\"outputproperties\":[{\"id\": \"$BUILD_STOP_ID\"},{\"id\": \"$REPO_ID\"},{\"id\": \"$PROJECT_NAME_ID\"}],\"filter\":{\"type\": \"and\",\"conditions\":[{\"type\":\"property\",\"id\": $REPO_ID,\"operator\": \"like\",\"value\": \"$REPO_URL\"},{\"type\":\"property\",\"id\": $PROJECT_NAME_ID,\"operator\": \"like\",\"value\": \"$PROJECT_NAME\"}]}}"
 
             # Выполняем запрос для получения информации о проекте
             search_response=$(curl -s -w "\n%{http_code}" -X POST "$API_SEARCH_URL" -H "SV-Token: $SV_TOKEN" -H "Content-Type: application/json" -d "$SEARCH_JSON_REPO_LINK")
