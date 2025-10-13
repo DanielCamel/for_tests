@@ -22,8 +22,7 @@ jobs:
             REPO_ID=493
             PROJECT_NAME_ID=3
             BUILD_STOP_ID=648
-            API_UPDATE_URL='http://localhost:8108/api/entity/update'
-            API_SEARCH_URL='http://localhost:8108/api/entity/search'
+            API_SEARCH_URL='http://192.168.121.78:8108/api/entity/search'
             PROJECT_NAME='Java_Labs'
 
             # Функция обработки ответа API
