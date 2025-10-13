@@ -55,7 +55,7 @@ jobs:
             # Проверка флага остановки сборки проекта
             if [ "$BUILD_STOP_VALUE" = "true" ]; then
               echo "[WARNING] Установлен флаг остановки сборки!"
-              echo "$VULNERS_ID"
+              echo "$VULNERS"
 
               echo "stop_build=true" >> $GITHUB_OUTPUT
              exit 1
