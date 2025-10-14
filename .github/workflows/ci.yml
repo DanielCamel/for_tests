@@ -51,7 +51,7 @@ jobs:
             search_response=$(curl -s -w "\n%{http_code}" -X POST "$API_SEARCH_URL" -H "SV-Token: $SV_TOKEN" -H "Content-Type: application/json" -d "$SEARCH_JSON_REPO_LINK")
             search_content=$(parse_response "$search_response")
             BUILD_STOP_VALUE="$(echo "$search_content" | jq -r '.result[0].properties[0].value')"
-            VULNERS_AMOUNT="$(echo "$search_content" | jq -r '.result[0].properties[1].value')"
+            VULNERS_AMOUNT="$(echo "$search_content" | jq -r '.result[0].properties[1].value[0]')"
 
             # Проверка флага остановки сборки проекта
             if [ "$BUILD_STOP_VALUE" = "true" ]; then
