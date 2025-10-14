@@ -18,7 +18,7 @@ jobs:
           SV_TOKEN: ${{ secrets.SV_TOKEN }}
           REPO_URL: "https://github.com/${{ github.repository }}.git"
           #REPO_URL: 'https://github.com/PyCQA/bandit.git'
-          PROJECT_NAME='Java_Labs'
+          PROJECT_NAME: 'Java_Labs'
           #PROJECT_NAME: 'https://github.com/PyCQA/bandit.git'
         id: check
         run: |
