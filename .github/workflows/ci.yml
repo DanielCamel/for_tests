@@ -19,14 +19,14 @@ jobs:
           #REPO_URL: "https://github.com/${{ github.repository }}.git"
         id: check
         run: |
-            REPO_URL='https://github.com/PyCQA/bandit.git'
+            REPO_URL='https://github.com/poise/python.git'
             REPO_ID=493
             PROJECT_NAME_ID=3
             VULNERS_AMOUNT_ID=663
             BUILD_STOP_ID=648
             API_SEARCH_URL='http://localhost:8108/api/entity/search'
             #PROJECT_NAME='Java_Labs'
-            PROJECT_NAME='https://github.com/PyCQA/bandit.git'
+            PROJECT_NAME='Тестовый проект на сканирование 2 репы'
 
             # Функция обработки ответа API
             parse_response() {
