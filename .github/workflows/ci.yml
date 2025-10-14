@@ -16,16 +16,17 @@ jobs:
       - name: Check build stop flag
         env:
           SV_TOKEN: ${{ secrets.SV_TOKEN }}
-          REPO_URL: "https://github.com/${{ github.repository }}.git"
+          #REPO_URL: "https://github.com/${{ github.repository }}.git"
         id: check
         run: |
-            hostname
+            REPO_URL='https://github.com/PyCQA/bandit.git'
             REPO_ID=493
             PROJECT_NAME_ID=3
-            VULNERS_ID=655
+            VULNERS_AMOUNT_ID=663
             BUILD_STOP_ID=648
             API_SEARCH_URL='http://localhost:8108/api/entity/search'
-            PROJECT_NAME='Java_Labs'
+            #PROJECT_NAME='Java_Labs'
+            PROJECT_NAME='https://github.com/PyCQA/bandit.git'
 
             # Функция обработки ответа API
             parse_response() {
@@ -44,18 +45,18 @@ jobs:
             }
 
             # Формируем JSON фильтр. Id свойства объекта "Ссылка на репозиторий": Id=493
-            SEARCH_JSON_REPO_LINK="{\"skip\":0,\"top\":5,\"outputproperties\":[{\"id\": \"$BUILD_STOP_ID\"},{\"id\": \"$VULNERS_ID\"}],\"filter\":{\"type\": \"and\",\"conditions\":[{\"type\":\"property\",\"id\": $REPO_ID,\"operator\": \"like\",\"value\": \"$REPO_URL\"},{\"type\":\"property\",\"id\": $PROJECT_NAME_ID,\"operator\": \"equal\",\"value\": \"$PROJECT_NAME\"}]}}"
+            SEARCH_JSON_REPO_LINK="{\"skip\":0,\"top\":5,\"outputproperties\":[{\"id\": \"$BUILD_STOP_ID\"},{\"id\": \"$VULNERS_AMOUNT_ID\"}],\"filter\":{\"type\": \"and\",\"conditions\":[{\"type\":\"property\",\"id\": $REPO_ID,\"operator\": \"in\",\"value\": \"$REPO_URL\"},{\"type\":\"property\",\"id\": $PROJECT_NAME_ID,\"operator\": \"equal\",\"value\": \"$PROJECT_NAME\"}]}}"
 
             # Выполняем запрос для получения информации о проекте
             search_response=$(curl -s -w "\n%{http_code}" -X POST "$API_SEARCH_URL" -H "SV-Token: $SV_TOKEN" -H "Content-Type: application/json" -d "$SEARCH_JSON_REPO_LINK")
             search_content=$(parse_response "$search_response")
             BUILD_STOP_VALUE="$(echo "$search_content" | jq -r '.result[0].properties[0].value')"
-            VULNERS="$(echo "$search_content" | jq -r '.result[0].properties[1].value')"
+            VULNERS_AMOUNT="$(echo "$search_content" | jq -r '.result[0].properties[1].value')"
 
             # Проверка флага остановки сборки проекта
             if [ "$BUILD_STOP_VALUE" = "true" ]; then
               echo "[WARNING] Установлен флаг остановки сборки!"
-              echo "$VULNERS"
+              echo "$VULNERS_AMOUNT"
 
               echo "stop_build=true" >> $GITHUB_OUTPUT
              exit 1
