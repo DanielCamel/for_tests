@@ -52,7 +52,8 @@ jobs:
             search_content=$(parse_response "$search_response")
             #BUILD_STOP_VALUE="$(echo "$search_content" | jq -r '.result[0].properties[0].value')"
             BUILD_STOP_VALUE="true"
-            VULNERS_AMOUNT="$(echo "$search_content" | jq -r '.result[0].properties[1].value[0]')"
+            #VULNERS_AMOUNT="$(echo "$search_content" | jq -r '.result[0].properties[1].value[0]')"
+            VULNERS_AMOUNT="critical: 49 high: 301 medium: 303"
 
             # Проверка флага остановки сборки проекта
             if [ "$BUILD_STOP_VALUE" = "true" ]; then
